@@ -4,22 +4,26 @@ const useScrollSpy = (sectionIds, offset = 100) => {
   const [activeSection, setActiveSection] = useState(sectionIds[0]);
 
   useEffect(() => {
-    const handleScroll = () => {
-      const scrollY = window.scrollY + offset;
-
-      for (let i = sectionIds.length - 1; i >= 0; i--) {
-        const el = document.getElementById(sectionIds[i]);
-        if (el && el.offsetTop <= scrollY) {
-          setActiveSection(sectionIds[i]);
-          return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            setActiveSection(entry.target.id);
+          }
         }
+      },
+      {
+        rootMargin: `-${offset}px 0px -${Math.max(0, window.innerHeight - offset - 1)}px 0px`,
+        threshold: 0
       }
-      setActiveSection(sectionIds[0]);
-    };
+    );
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
+    sectionIds.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
   }, [sectionIds, offset]);
 
   return activeSection;
