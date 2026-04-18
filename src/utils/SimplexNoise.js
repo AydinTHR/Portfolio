@@ -21,11 +21,14 @@ class SimplexNoise {
     ]);
 
     for (let i = 0; i < 512; i++) this.perm[i] = this.p[i & 255];
+
+    const sqrt3 = Math.sqrt(3);
+    this._F2 = 0.5 * (sqrt3 - 1);
+    this._G2 = (3 - sqrt3) / 6;
   }
 
   noise2D(xin, yin) {
-    const F2 = 0.5 * (Math.sqrt(3) - 1),
-      G2 = (3 - Math.sqrt(3)) / 6;
+    const F2 = this._F2, G2 = this._G2;
     const s = (xin + yin) * F2;
     const i = Math.floor(xin + s),
       j = Math.floor(yin + s);

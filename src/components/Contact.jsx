@@ -1,12 +1,9 @@
 import React, { useState } from 'react';
-
-const contactLinks = [
-  { label: 'Email Me', href: '#' },
-  { label: 'GitHub', href: '#' },
-  { label: 'LinkedIn', href: '#' },
-];
+import { useContent } from '../hooks/useContent';
+import { SOCIAL_ICONS, ArrowIcon } from './Icons';
 
 const Contact = () => {
+  const { content } = useContent();
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
   const [status, setStatus] = useState(null);
 
@@ -20,7 +17,6 @@ const Contact = () => {
       setStatus({ type: 'error', text: 'Please fill in all fields.' });
       return;
     }
-    // Placeholder — wire to Formspree or EmailJS later
     setStatus({ type: 'success', text: 'Message sent! (Demo — not yet connected)' });
     setFormData({ name: '', email: '', message: '' });
     setTimeout(() => setStatus(null), 4000);
@@ -29,11 +25,9 @@ const Contact = () => {
   return (
     <section id="contact" className="section">
       <div className="contact__inner animate-on-scroll">
+        <p className="section__label">04 — Contact</p>
         <h2 className="section__title">Get In Touch</h2>
-        <p className="contact__intro">
-          I'm always open to new opportunities and collaborations. Feel free to
-          reach out if you'd like to work together!
-        </p>
+        <p className="contact__intro">{content.contact.intro}</p>
 
         <form className="contact__form" onSubmit={handleSubmit}>
           <input
@@ -69,12 +63,33 @@ const Contact = () => {
           )}
         </form>
 
-        <div className="contact__links">
-          {contactLinks.map((link, index) => (
-            <a key={index} href={link.href} className="btn-glass">
-              {link.label}
-            </a>
-          ))}
+        <div className="contact__links-section">
+          <p className="contact__connect-label">Connect Directly</p>
+          <div className="contact__links">
+            {content.contact.links.map((link, i) => {
+              const Icon = SOCIAL_ICONS[link.type];
+              return (
+                <a
+                  key={i}
+                  href={link.url}
+                  target={link.type === 'email' ? undefined : '_blank'}
+                  rel="noopener noreferrer"
+                  className="contact__link-card"
+                >
+                  <div className="contact__link-icon">
+                    {Icon ? <Icon size={22} /> : null}
+                  </div>
+                  <div className="contact__link-info">
+                    <span className="contact__link-label">{link.label}</span>
+                    <span className="contact__link-value">{link.value}</span>
+                  </div>
+                  <div className="contact__link-arrow">
+                    <ArrowIcon size={18} />
+                  </div>
+                </a>
+              );
+            })}
+          </div>
         </div>
       </div>
     </section>

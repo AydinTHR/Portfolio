@@ -1,59 +1,64 @@
 import React from 'react';
+import { useContent } from '../hooks/useContent';
 
-const projects = [
-  {
-    id: 1,
-    emoji: '🐕',
-    title: 'Dog Wash Booking System',
-    description:
-      'An online appointment booking system for Dog Wash services at PetValu. Features real-time availability, booking management, and customer notifications.',
-    technologies: ['React', 'Node.js', 'PostgreSQL'],
-    link: '#',
-  },
-  {
-    id: 2,
-    emoji: '🛒',
-    title: 'E-Commerce Platform',
-    description:
-      'A full-stack e-commerce application with product catalog, shopping cart, secure checkout, and order tracking dashboard.',
-    technologies: ['React', 'Express', 'MongoDB', 'Redis'],
-    link: '#',
-  },
-  {
-    id: 3,
-    emoji: '🤖',
-    title: 'AI Chat Assistant',
-    description:
-      'An intelligent conversational assistant powered by machine learning, featuring natural language understanding and context-aware responses.',
-    technologies: ['Python', 'TensorFlow', 'React', 'FastAPI'],
-    link: '#',
-  },
-];
+const handleSpotlight = (e) => {
+  const rect = e.currentTarget.getBoundingClientRect();
+  e.currentTarget.style.setProperty('--mx', `${e.clientX - rect.left}px`);
+  e.currentTarget.style.setProperty('--my', `${e.clientY - rect.top}px`);
+};
 
 const Projects = () => {
+  const { content } = useContent();
+
   return (
     <section id="projects" className="projects-section">
-      <div className="projects__inner animate-on-scroll">
-        <h2 className="section__title">My Projects</h2>
-        <div className="projects__grid">
-          {projects.map((project) => (
-            <div key={project.id} className="project-card">
-              <div className="project-card__image">{project.emoji}</div>
-              <div className="project-card__body">
-                <h3 className="project-card__title">{project.title}</h3>
-                <p className="project-card__desc">{project.description}</p>
-                <div className="project-card__tags">
-                  {project.technologies.map((tech, i) => (
-                    <span key={i} className="project-card__tag">
-                      {tech}
-                    </span>
-                  ))}
+      <div className="projects__inner">
+        <p className="section__label animate-on-scroll">03 — Projects</p>
+        <h2 className="section__title animate-on-scroll">My Projects</h2>
+
+        <div className="projects__list">
+          {content.projects.map((project, index) => (
+            <article
+              key={index}
+              className="project-block stagger-card"
+              style={{ '--i': index }}
+              onMouseMove={handleSpotlight}
+            >
+              <div className="project-block__header">
+                <div className="project-block__index">
+                  <span className="project-block__number">{project.number}</span>
+                  <span className="project-block__icon" aria-hidden="true">{project.icon}</span>
                 </div>
-                <a href={project.link} className="project-card__link">
-                  View Project →
+                <span className="project-block__year">{project.year}</span>
+              </div>
+
+              <h3 className="project-block__title">
+                {project.title}
+                <span className="project-block__title-underline" aria-hidden="true" />
+              </h3>
+
+              <div className="project-block__techs">
+                {project.technologies.map((tech, i) => (
+                  <span key={i} className="project-block__tech">
+                    <span className="project-block__tech-dot" aria-hidden="true" />
+                    {tech}
+                  </span>
+                ))}
+              </div>
+
+              <p className="project-block__desc">{project.description}</p>
+
+              <div className="project-block__actions">
+                <a href={project.liveLink || '#'} className="project-block__btn">
+                  <span>View Details</span>
+                  <span className="project-block__btn-arrow" aria-hidden="true">↗</span>
+                </a>
+                <a href={project.codeLink || '#'} className="project-block__btn project-block__btn--ghost">
+                  <span className="project-block__btn-icon" aria-hidden="true">&lt;/&gt;</span>
+                  <span>View Code</span>
                 </a>
               </div>
-            </div>
+            </article>
           ))}
         </div>
       </div>

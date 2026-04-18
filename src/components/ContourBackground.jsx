@@ -263,6 +263,36 @@ const ContourBackground = () => {
     document.addEventListener('mouseleave', handleMouseLeave);
     canvas.addEventListener('click', handleClick);
 
+    // Pause animation + fade canvas when hero scrolls out of view
+    let heroVisible = true;
+    let observer = null;
+    const hero = document.getElementById('home');
+
+    const startLoop = () => {
+      if (rafId || reducedMotion) return;
+      rafId = requestAnimationFrame(tick);
+    };
+    const stopLoop = () => {
+      if (!rafId) return;
+      cancelAnimationFrame(rafId);
+      rafId = 0;
+    };
+
+    if (hero && typeof IntersectionObserver !== 'undefined') {
+      const portfolio = document.querySelector('.portfolio');
+      observer = new IntersectionObserver(
+        (entries) => {
+          heroVisible = entries[0].isIntersecting;
+          canvas.classList.toggle('contour-canvas--paused', !heroVisible);
+          if (portfolio) portfolio.classList.toggle('contour-hidden', !heroVisible);
+          if (heroVisible) startLoop();
+          else stopLoop();
+        },
+        { threshold: 0 }
+      );
+      observer.observe(hero);
+    }
+
     if (!reducedMotion) {
       rafId = requestAnimationFrame(tick);
     } else if (isNewWorker) {
@@ -272,6 +302,7 @@ const ContourBackground = () => {
 
     return () => {
       cancelAnimationFrame(rafId);
+      if (observer) observer.disconnect();
       window.removeEventListener('resize', handleResize);
       document.removeEventListener('fullscreenchange', handleResize);
       document.removeEventListener('mousemove', handleMouseMove);
@@ -284,6 +315,7 @@ const ContourBackground = () => {
   return (
     <canvas
       ref={canvasRef}
+      className="contour-canvas"
       style={{
         position: 'fixed',
         top: 0,
