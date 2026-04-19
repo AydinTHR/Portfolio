@@ -1,15 +1,25 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { useContent } from '../hooks/useContent';
+import useReducedMotionSafe from '../hooks/useReducedMotionSafe';
+import useMagnetic from '../hooks/useMagnetic';
+import AvailabilityPill from './polish/AvailabilityPill';
+import { stagger, charReveal, reduced as reducedVariant } from '../motion/variants';
 
 const SCRAMBLE_CHARS = '!<>-_\\/[]{}=+*^?#_____';
 
 const Hero = ({ onNavigate }) => {
   const { content } = useContent();
+  const reducedMotion = useReducedMotionSafe();
   const TITLES = content.hero.subtitles;
-  const heroRef = useRef(null);
   const nameRef = useRef(null);
   const [subtitle, setSubtitle] = useState('');
   const subtitleRef = useRef({ titleIdx: 0, charIdx: 0, deleting: false, pauseTicks: 0 });
+  const magnetic = useMagnetic(0.35);
+
+  const { scrollY } = useScroll();
+  const parallaxY = useTransform(scrollY, [0, 600], [0, 240]);
+  const heroOpacity = useTransform(scrollY, [0, 500], [1, 0]);
 
   // Text scramble on mount
   useEffect(() => {
@@ -20,7 +30,7 @@ const Hero = ({ onNavigate }) => {
     let frame = 0;
     const totalFrames = length * 3;
 
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (reducedMotion) {
       el.textContent = target;
       return;
     }
@@ -47,12 +57,12 @@ const Hero = ({ onNavigate }) => {
 
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [content.hero.name]);
+  }, [content.hero.name, reducedMotion]);
 
   // Typewriter effect
   useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      setSubtitle(TITLES[0]);
+    if (reducedMotion) {
+      setSubtitle(TITLES[0] || '');
       return;
     }
 
@@ -65,6 +75,7 @@ const Hero = ({ onNavigate }) => {
       }
 
       const currentTitle = TITLES[s.titleIdx];
+      if (!currentTitle) return;
 
       if (!s.deleting) {
         s.charIdx++;
@@ -85,55 +96,54 @@ const Hero = ({ onNavigate }) => {
     }, 50);
 
     return () => clearInterval(interval);
-  }, [TITLES]);
+  }, [TITLES, reducedMotion]);
 
-  // Hero parallax on scroll
-  useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-    const el = heroRef.current;
-    if (!el) return;
-
-    const onScroll = () => {
-      const scrollY = window.scrollY;
-      const vh = window.innerHeight;
-      const progress = Math.min(scrollY / vh, 1);
-      el.style.transform = `translateY(${scrollY * 0.4}px)`;
-      el.style.opacity = 1 - progress;
-    };
-
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  // Magnetic button handlers
-  const handleMagneticMove = useCallback((e) => {
-    const btn = e.currentTarget;
-    const rect = btn.getBoundingClientRect();
-    const x = e.clientX - rect.left - rect.width / 2;
-    const y = e.clientY - rect.top - rect.height / 2;
-    btn.style.transform = `translate(${x * 0.35}px, ${y * 0.35}px)`;
-  }, []);
-
-  const handleMagneticLeave = useCallback((e) => {
-    e.currentTarget.style.transform = 'translate(0, 0)';
-  }, []);
+  const chars = Array.from(content.hero.greeting + ' ');
+  const childVariant = reducedMotion ? reducedVariant : charReveal;
 
   return (
     <section id="home" className="hero">
-      <div className="hero__content" ref={heroRef}>
-        <h1 className="hero__title">
-          {content.hero.greeting} <span className="hero__name" ref={nameRef}>{content.hero.name}</span>
-        </h1>
-        <p className="hero__subtitle">
-          {subtitle}<span className="hero__cursor">|</span>
+      <motion.div
+        className="hero__content"
+        style={{ y: parallaxY, opacity: heroOpacity }}
+      >
+        <AvailabilityPill
+          active={content.hero.availability?.active}
+          label={content.hero.availability?.label}
+        />
+        <motion.h1
+          className="hero__title"
+          variants={stagger(0.04, 0.25)}
+          initial="hidden"
+          animate="show"
+          aria-label={`${content.hero.greeting} ${content.hero.name}`}
+        >
+          {chars.map((c, i) => (
+            <motion.span
+              key={`g-${i}`}
+              className="hero__name-char"
+              variants={childVariant}
+              aria-hidden="true"
+              style={{ whiteSpace: 'pre' }}
+            >
+              {c}
+            </motion.span>
+          ))}
+          <span className="hero__name" ref={nameRef}>
+            {content.hero.name}
+          </span>
+        </motion.h1>
+        <p className="hero__subtitle" aria-live="polite">
+          {subtitle}
+          <span className="hero__cursor">|</span>
         </p>
         <div className="hero__actions">
           <a
             className="btn-glass btn-magnetic"
             onClick={() => onNavigate('projects')}
-            onMouseMove={handleMagneticMove}
-            onMouseLeave={handleMagneticLeave}
+            onMouseMove={magnetic.onMove}
+            onMouseLeave={magnetic.onLeave}
+            onPointerDown={magnetic.onDown}
           >
             View My Work
           </a>
@@ -141,12 +151,17 @@ const Hero = ({ onNavigate }) => {
             className="btn-glass btn-glass--outline btn-magnetic"
             href="#"
             onClick={(e) => e.preventDefault()}
-            onMouseMove={handleMagneticMove}
-            onMouseLeave={handleMagneticLeave}
+            onMouseMove={magnetic.onMove}
+            onMouseLeave={magnetic.onLeave}
+            onPointerDown={magnetic.onDown}
           >
             Download Resume
           </a>
         </div>
+      </motion.div>
+      <div className="hero__scroll-hint" aria-hidden="true">
+        <span>Scroll</span>
+        <span className="hero__scroll-hint-line" />
       </div>
     </section>
   );

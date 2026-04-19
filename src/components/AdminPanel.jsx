@@ -45,7 +45,7 @@ const AdminPanel = ({ open, onClose }) => {
   const addSkill = () => {
     patch('skills', [
       ...content.skills,
-      { title: 'New Skill', description: 'Description', technologies: ['Tech 1'] },
+      { title: 'New Skill', description: 'Description', technologies: ['Tech 1'], proficiency: 75 },
     ]);
   };
 
@@ -57,13 +57,28 @@ const AdminPanel = ({ open, onClose }) => {
         number: num,
         year: new Date().getFullYear().toString(),
         icon: '◆',
+        category: 'Web app',
+        image: '',
         title: 'New Project',
         description: 'Description',
         technologies: ['Tech 1'],
         liveLink: '#',
         codeLink: '#',
+        highlights: [],
       },
     ]);
+  };
+
+  const addStat = () => {
+    updateField('about', 'stats', [...(content.about.stats || []), { label: 'New stat', value: 0 }]);
+  };
+
+  const removeStat = (i) => {
+    updateField(
+      'about',
+      'stats',
+      (content.about.stats || []).filter((_, idx) => idx !== i)
+    );
   };
 
   const onImageUpload = (e) => {
@@ -153,6 +168,39 @@ const AdminPanel = ({ open, onClose }) => {
                   updateField('hero', 'subtitles', e.target.value.split('\n').filter(Boolean))
                 }
               />
+
+              <label className="admin-label" style={{ marginTop: '1rem' }}>Availability pill</label>
+              <div className="admin-row">
+                <div>
+                  <label className="admin-sublabel">Show pill</label>
+                  <select
+                    className="admin-input"
+                    value={content.hero.availability?.active ? 'on' : 'off'}
+                    onChange={(e) =>
+                      updateField('hero', 'availability', {
+                        ...(content.hero.availability || {}),
+                        active: e.target.value === 'on',
+                      })
+                    }
+                  >
+                    <option value="on">On</option>
+                    <option value="off">Off</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="admin-sublabel">Label</label>
+                  <input
+                    className="admin-input"
+                    value={content.hero.availability?.label || ''}
+                    onChange={(e) =>
+                      updateField('hero', 'availability', {
+                        ...(content.hero.availability || {}),
+                        label: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+              </div>
             </div>
           )}
 
@@ -207,6 +255,47 @@ const AdminPanel = ({ open, onClose }) => {
                   )
                 }
               />
+
+              <label className="admin-label" style={{ marginTop: '1.25rem' }}>Stat chips</label>
+              {(content.about.stats || []).map((stat, i) => (
+                <div key={i} className="admin-row">
+                  <div>
+                    <label className="admin-sublabel">Label</label>
+                    <input
+                      className="admin-input"
+                      value={stat.label}
+                      onChange={(e) => {
+                        const next = [...(content.about.stats || [])];
+                        next[i] = { ...stat, label: e.target.value };
+                        updateField('about', 'stats', next);
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label className="admin-sublabel">Value (number)</label>
+                    <input
+                      className="admin-input"
+                      type="number"
+                      value={stat.value}
+                      onChange={(e) => {
+                        const next = [...(content.about.stats || [])];
+                        next[i] = { ...stat, value: Number(e.target.value) || 0 };
+                        updateField('about', 'stats', next);
+                      }}
+                    />
+                  </div>
+                  <button
+                    className="admin-btn admin-btn--danger"
+                    onClick={() => removeStat(i)}
+                    style={{ alignSelf: 'flex-end' }}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+              <button className="admin-btn admin-btn--add" onClick={addStat}>
+                + Add Stat
+              </button>
             </div>
           )}
 
@@ -250,6 +339,20 @@ const AdminPanel = ({ open, onClose }) => {
                           .split(',')
                           .map((t) => t.trim())
                           .filter(Boolean),
+                      })
+                    }
+                  />
+                  <label className="admin-label">Proficiency: {skill.proficiency ?? 75}%</label>
+                  <input
+                    className="admin-input admin-range"
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={skill.proficiency ?? 75}
+                    onChange={(e) =>
+                      updateListItem('skills', i, {
+                        ...skill,
+                        proficiency: Number(e.target.value),
                       })
                     }
                   />
@@ -306,6 +409,24 @@ const AdminPanel = ({ open, onClose }) => {
                       />
                     </div>
                   </div>
+                  <label className="admin-label">Category eyebrow</label>
+                  <input
+                    className="admin-input"
+                    value={project.category || ''}
+                    placeholder="e.g. Full-stack web app"
+                    onChange={(e) =>
+                      updateListItem('projects', i, { ...project, category: e.target.value })
+                    }
+                  />
+                  <label className="admin-label">Image URL (optional)</label>
+                  <input
+                    className="admin-input"
+                    value={project.image || ''}
+                    placeholder="https://... (leave blank for no image)"
+                    onChange={(e) =>
+                      updateListItem('projects', i, { ...project, image: e.target.value })
+                    }
+                  />
                   <label className="admin-label">Title</label>
                   <input
                     className="admin-input"
@@ -359,6 +480,18 @@ const AdminPanel = ({ open, onClose }) => {
                       />
                     </div>
                   </div>
+                  <label className="admin-label">Highlights (one per line, max 3 shown)</label>
+                  <textarea
+                    className="admin-textarea"
+                    rows={3}
+                    value={(project.highlights || []).join('\n')}
+                    onChange={(e) =>
+                      updateListItem('projects', i, {
+                        ...project,
+                        highlights: e.target.value.split('\n').filter((l) => l.trim().length > 0),
+                      })
+                    }
+                  />
                 </div>
               ))}
               <button className="admin-btn admin-btn--add" onClick={addProject}>
@@ -377,6 +510,14 @@ const AdminPanel = ({ open, onClose }) => {
                 onChange={(e) =>
                   updateField('contact', 'intro', e.target.value)
                 }
+              />
+
+              <label className="admin-label" style={{ marginTop: '1rem' }}>Timezone</label>
+              <input
+                className="admin-input"
+                value={content.contact.timezone || 'auto'}
+                placeholder="auto or e.g. America/Los_Angeles"
+                onChange={(e) => updateField('contact', 'timezone', e.target.value || 'auto')}
               />
 
               <label className="admin-label" style={{ marginTop: '1.25rem' }}>

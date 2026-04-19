@@ -12,6 +12,8 @@ import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 import SectionIndicator from './components/SectionIndicator';
 import AdminPanel from './components/AdminPanel';
+import GrainOverlay from './components/polish/GrainOverlay';
+import Toast from './components/polish/Toast';
 import useScrollSpy from './hooks/useScrollSpy';
 
 const sections = ['home', 'about', 'skills', 'projects', 'contact'];
@@ -72,7 +74,20 @@ const Portfolio = () => {
       observer.observe(el);
     });
 
-    return () => observer.disconnect();
+    const titleObs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) entry.target.classList.add('is-inview');
+        });
+      },
+      { threshold: 0.4 }
+    );
+    document.querySelectorAll('.section__title').forEach((el) => titleObs.observe(el));
+
+    return () => {
+      observer.disconnect();
+      titleObs.disconnect();
+    };
   }, []);
 
   return (
@@ -84,6 +99,8 @@ const Portfolio = () => {
       <CustomCursor />
       <div className="scroll-progress" style={{ width: `${scrollProgress}%` }} />
       <ContourBackground />
+      <GrainOverlay />
+      <Toast />
       <Nav sections={sections} activeSection={activeSection} onNavigate={scrollToSection} />
       <SectionIndicator sections={sections} activeSection={activeSection} onNavigate={scrollToSection} />
       <Hero onNavigate={scrollToSection} />

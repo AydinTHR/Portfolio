@@ -1,5 +1,6 @@
 import React from 'react';
 import { useContent } from '../hooks/useContent';
+import ProficiencyRing from './polish/ProficiencyRing';
 
 const handleSpotlight = (e) => {
   const rect = e.currentTarget.getBoundingClientRect();
@@ -23,6 +24,7 @@ const Skills = () => {
               style={{ '--i': index }}
               onMouseMove={handleSpotlight}
             >
+              <ProficiencyRing value={skill.proficiency ?? 75} />
               <h3 className="skill-card__title">{skill.title}</h3>
               <p className="skill-card__desc">{skill.description}</p>
               <div className="skill-card__techs">

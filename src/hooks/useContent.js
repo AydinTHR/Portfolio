@@ -4,21 +4,51 @@ import { defaults } from '../data/defaults';
 const STORAGE_KEY = 'portfolio-content-v1';
 const UPDATE_EVENT = 'portfolio-content-updated';
 
+const mergeSkill = (stored) => ({
+  ...defaults.skills[0],
+  proficiency: 75,
+  ...stored,
+});
+
+const mergeProject = (stored) => ({
+  ...defaults.projects[0],
+  highlights: [],
+  category: '',
+  image: '',
+  ...stored,
+});
+
+const mergeStats = (stored) =>
+  Array.isArray(stored) && stored.length
+    ? stored.map((s) => ({ label: '', value: 0, ...s }))
+    : defaults.about.stats;
+
 const loadContent = () => {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (!stored) return defaults;
     const parsed = JSON.parse(stored);
     return {
-      hero: { ...defaults.hero, ...(parsed.hero || {}) },
-      about: { ...defaults.about, ...(parsed.about || {}) },
+      hero: {
+        ...defaults.hero,
+        ...(parsed.hero || {}),
+        availability: {
+          ...defaults.hero.availability,
+          ...(parsed.hero?.availability || {}),
+        },
+      },
+      about: {
+        ...defaults.about,
+        ...(parsed.about || {}),
+        stats: mergeStats(parsed.about?.stats),
+      },
       contact: {
         ...defaults.contact,
         ...(parsed.contact || {}),
         links: Array.isArray(parsed.contact?.links) ? parsed.contact.links : defaults.contact.links,
       },
-      skills: Array.isArray(parsed.skills) ? parsed.skills : defaults.skills,
-      projects: Array.isArray(parsed.projects) ? parsed.projects : defaults.projects,
+      skills: Array.isArray(parsed.skills) ? parsed.skills.map(mergeSkill) : defaults.skills,
+      projects: Array.isArray(parsed.projects) ? parsed.projects.map(mergeProject) : defaults.projects,
     };
   } catch {
     return defaults;
