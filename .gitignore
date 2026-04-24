@@ -22,3 +22,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Claude Code
+.claude/skills/
+.claude/worktrees/
+
+# Misc
+untitled.py
+*.pyc
+__pycache__/
