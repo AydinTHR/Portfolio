@@ -18,6 +18,19 @@ const mergeProject = (stored) => ({
   ...stored,
 });
 
+const mergeExperience = (stored) => ({
+  role: '',
+  company: '',
+  location: '',
+  type: '',
+  startDate: '',
+  endDate: '',
+  icon: '◆',
+  description: '',
+  highlights: [],
+  ...stored,
+});
+
 const mergeStats = (stored) =>
   Array.isArray(stored) && stored.length
     ? stored.map((s) => ({ label: '', value: 0, ...s }))
@@ -49,6 +62,9 @@ const loadContent = () => {
       },
       skills: Array.isArray(parsed.skills) ? parsed.skills.map(mergeSkill) : defaults.skills,
       projects: Array.isArray(parsed.projects) ? parsed.projects.map(mergeProject) : defaults.projects,
+      experience: Array.isArray(parsed.experience)
+        ? parsed.experience.map(mergeExperience)
+        : defaults.experience,
     };
   } catch {
     return defaults;

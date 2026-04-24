@@ -153,7 +153,7 @@ const Projects = () => {
   return (
     <section id="projects" className="projects-section">
       <div className="projects__inner">
-        <p className="section__label animate-on-scroll">03 — Projects</p>
+        <p className="section__label animate-on-scroll">04 — Projects</p>
         <h2 className="section__title animate-on-scroll">My Projects</h2>
 
         <div className="projects__list">

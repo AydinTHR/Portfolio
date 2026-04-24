@@ -65,7 +65,7 @@ const Contact = () => {
   return (
     <section id="contact" className="section">
       <div className="contact__inner animate-on-scroll">
-        <p className="section__label">04 — Contact</p>
+        <p className="section__label">05 — Contact</p>
         <h2 className="section__title">Get In Touch</h2>
         <p className="contact__intro">{content.contact.intro}</p>
 

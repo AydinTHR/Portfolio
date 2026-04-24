@@ -59,6 +59,56 @@ export const defaults = {
       proficiency: 80,
     },
   ],
+  experience: [
+    {
+      role: 'Software Developer Intern',
+      company: 'Nova Ventures',
+      location: 'Toronto, ON',
+      type: 'On-site',
+      startDate: 'May 2025',
+      endDate: 'Aug 2025',
+      icon: '◎',
+      description:
+        'Contributed to development of a goalkeeper performance analytics platform using React frontend and Python/FastAPI backend, built for competitive soccer teams.',
+      highlights: [
+        'Shipped 12+ React components for the analytics dashboard',
+        'Built REST endpoints processing match data in < 200ms',
+        'Collaborated with 4 engineers in two-week agile sprints',
+      ],
+    },
+    {
+      role: 'Developer & Database Intern',
+      company: 'Sepantech',
+      location: 'Sweden · Remote',
+      type: 'Remote',
+      startDate: 'Jan 2024',
+      endDate: 'Apr 2024',
+      icon: '◆',
+      description:
+        'Contributed as a Software Engineer Intern on a course management application for medical and physiotherapy professionals, now in use across Sweden.',
+      highlights: [
+        'Designed 6+ MySQL tables and optimized 12+ queries by adding composite indexes, reducing average query response time by 30%',
+        'Developed 8+ backend API endpoints using Node.js for course management, authentication, and certificate generation',
+        'Collaborated with 3+ developers in an Agile environment, participating in code reviews and sprint planning',
+      ],
+    },
+    {
+      role: 'Animal Care Expert & Assistant Manager',
+      company: 'Pet Valu',
+      location: 'Richmond Hill, ON',
+      type: 'On-site',
+      startDate: 'Aug 2023',
+      endDate: 'Present',
+      icon: '●',
+      description:
+        'Promoted to Assistant Manager; lead shifts of 4–8 associates and train 10+ staff in service, operations, and pet-nutrition basics.',
+      highlights: [
+        'Consistently ranked #1 in-store for sales per transaction',
+        'Standardized opening/closing and weekly inventory cycle counts, reducing checkout errors',
+        'Owned the dog-wash booking pipeline, the basis for the portfolio project #1',
+      ],
+    },
+  ],
   contact: {
     intro: "I'm always open to new opportunities and collaborations. Feel free to reach out if you'd like to work together!",
     timezone: 'auto',

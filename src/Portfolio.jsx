@@ -6,17 +6,19 @@ import Nav from './components/Nav';
 import Hero from './components/Hero';
 import About from './components/About';
 import Skills from './components/Skills';
+import Experience from './components/Experience';
 import Projects from './components/Projects';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 import SectionIndicator from './components/SectionIndicator';
 import AdminPanel from './components/AdminPanel';
+import ThemeToggle from './components/ThemeToggle';
 import GrainOverlay from './components/polish/GrainOverlay';
 import Toast from './components/polish/Toast';
 import useScrollSpy from './hooks/useScrollSpy';
 
-const sections = ['home', 'about', 'skills', 'projects', 'contact'];
+const sections = ['home', 'about', 'skills', 'experience', 'projects', 'contact'];
 
 const Portfolio = () => {
   const activeSection = useScrollSpy(sections, 200);
@@ -99,6 +101,12 @@ const Portfolio = () => {
       <CustomCursor />
       <div className="scroll-progress" style={{ width: `${scrollProgress}%` }} />
       <ContourBackground />
+      <div className="aurora" aria-hidden="true">
+        <span className="aurora__blob aurora__blob--amber" />
+        <span className="aurora__blob aurora__blob--violet" />
+        <span className="aurora__blob aurora__blob--cyan" />
+      </div>
+      <div className="vignette" aria-hidden="true" />
       <GrainOverlay />
       <Toast />
       <Nav sections={sections} activeSection={activeSection} onNavigate={scrollToSection} />
@@ -106,10 +114,12 @@ const Portfolio = () => {
       <Hero onNavigate={scrollToSection} />
       <About />
       <Skills />
+      <Experience />
       <Projects />
       <Contact />
       <Footer />
       <ScrollToTop />
+      <ThemeToggle />
 
       <button
         className="admin-fab"

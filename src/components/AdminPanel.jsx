@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useContent } from '../hooks/useContent';
 import { defaults } from '../data/defaults';
 
-const TABS = ['Hero', 'About', 'Skills', 'Projects', 'Contact', 'Data'];
+const TABS = ['Hero', 'About', 'Skills', 'Experience', 'Projects', 'Contact', 'Data'];
 const SOCIAL_TYPES = ['email', 'github', 'linkedin', 'twitter', 'instagram'];
 
 const AdminPanel = ({ open, onClose }) => {
@@ -360,6 +360,166 @@ const AdminPanel = ({ open, onClose }) => {
               ))}
               <button className="admin-btn admin-btn--add" onClick={addSkill}>
                 + Add Skill
+              </button>
+            </div>
+          )}
+
+          {tab === 'Experience' && (
+            <div className="admin-section">
+              <p className="admin-note">
+                Your work history — roles, dates, and what you shipped. Stacked chronologically in the timeline.
+              </p>
+              {(content.experience || []).map((exp, i) => (
+                <div key={i} className="admin-card">
+                  <div className="admin-card-head">
+                    <span className="admin-card-num">#{i + 1}</span>
+                    <button
+                      className="admin-btn admin-btn--danger"
+                      onClick={() => {
+                        const next = (content.experience || []).filter((_, idx) => idx !== i);
+                        patch('experience', next);
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                  <label className="admin-label">Role / Title</label>
+                  <input
+                    className="admin-input"
+                    value={exp.role}
+                    onChange={(e) => {
+                      const next = [...content.experience];
+                      next[i] = { ...exp, role: e.target.value };
+                      patch('experience', next);
+                    }}
+                  />
+                  <div className="admin-row">
+                    <div>
+                      <label className="admin-label">Company</label>
+                      <input
+                        className="admin-input"
+                        value={exp.company}
+                        onChange={(e) => {
+                          const next = [...content.experience];
+                          next[i] = { ...exp, company: e.target.value };
+                          patch('experience', next);
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="admin-label">Location</label>
+                      <input
+                        className="admin-input"
+                        value={exp.location}
+                        onChange={(e) => {
+                          const next = [...content.experience];
+                          next[i] = { ...exp, location: e.target.value };
+                          patch('experience', next);
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="admin-label">Type</label>
+                      <input
+                        className="admin-input"
+                        value={exp.type}
+                        placeholder="On-site / Remote / Hybrid"
+                        onChange={(e) => {
+                          const next = [...content.experience];
+                          next[i] = { ...exp, type: e.target.value };
+                          patch('experience', next);
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="admin-row">
+                    <div>
+                      <label className="admin-label">Start date</label>
+                      <input
+                        className="admin-input"
+                        value={exp.startDate}
+                        placeholder="May 2025"
+                        onChange={(e) => {
+                          const next = [...content.experience];
+                          next[i] = { ...exp, startDate: e.target.value };
+                          patch('experience', next);
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="admin-label">End date</label>
+                      <input
+                        className="admin-input"
+                        value={exp.endDate}
+                        placeholder="Present"
+                        onChange={(e) => {
+                          const next = [...content.experience];
+                          next[i] = { ...exp, endDate: e.target.value };
+                          patch('experience', next);
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="admin-label">Icon</label>
+                      <input
+                        className="admin-input"
+                        value={exp.icon}
+                        onChange={(e) => {
+                          const next = [...content.experience];
+                          next[i] = { ...exp, icon: e.target.value };
+                          patch('experience', next);
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <label className="admin-label">Description</label>
+                  <textarea
+                    className="admin-textarea"
+                    rows={3}
+                    value={exp.description}
+                    onChange={(e) => {
+                      const next = [...content.experience];
+                      next[i] = { ...exp, description: e.target.value };
+                      patch('experience', next);
+                    }}
+                  />
+                  <label className="admin-label">Highlights / Bullets (one per line)</label>
+                  <textarea
+                    className="admin-textarea"
+                    rows={4}
+                    value={(exp.highlights || []).join('\n')}
+                    onChange={(e) => {
+                      const next = [...content.experience];
+                      next[i] = {
+                        ...exp,
+                        highlights: e.target.value.split('\n').filter((h) => h.trim().length > 0),
+                      };
+                      patch('experience', next);
+                    }}
+                  />
+                </div>
+              ))}
+              <button
+                className="admin-btn admin-btn--add"
+                onClick={() => {
+                  const next = [
+                    ...(content.experience || []),
+                    {
+                      role: 'New Role',
+                      company: 'Company',
+                      location: '',
+                      type: '',
+                      startDate: '',
+                      endDate: 'Present',
+                      icon: '◆',
+                      description: '',
+                      highlights: [],
+                    },
+                  ];
+                  patch('experience', next);
+                }}
+              >
+                + Add Experience
               </button>
             </div>
           )}

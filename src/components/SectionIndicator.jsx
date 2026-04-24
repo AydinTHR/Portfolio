@@ -1,6 +1,6 @@
 import React from 'react';
 
-const labels = { home: '01', about: '02', skills: '03', projects: '04', contact: '05' };
+const labels = { home: '01', about: '02', skills: '03', experience: '04', projects: '05', contact: '06' };
 
 const SectionIndicator = ({ sections, activeSection, onNavigate }) => {
   return (
