@@ -25,7 +25,7 @@ import pytest_asyncio  # noqa: E402
 from httpx import ASGITransport, AsyncClient  # noqa: E402
 from mongomock_motor import AsyncMongoMockClient  # noqa: E402
 
-from app.db import get_db  # noqa: E402
+from app.db import get_db, seed_if_empty  # noqa: E402
 from app.main import app  # noqa: E402
 from app.rate_limit import limiter  # noqa: E402
 
@@ -35,7 +35,10 @@ limiter.enabled = False
 @pytest_asyncio.fixture
 async def db():
     client = AsyncMongoMockClient()
-    return client["test_portfolio"]
+    database = client["test_portfolio"]
+    # Mirror production: the lifespan seeds default content on startup.
+    await seed_if_empty(database)
+    return database
 
 
 @pytest_asyncio.fixture

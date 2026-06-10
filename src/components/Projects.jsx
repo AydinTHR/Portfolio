@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from 'framer-motion';
 import { useContent } from '../hooks/useContent';
+import { resolveAssetUrl } from '../lib/api';
 import useReducedMotionSafe from '../hooks/useReducedMotionSafe';
 import CountUp from './polish/CountUp';
 
@@ -63,7 +64,7 @@ const ProjectCard = ({ project, index, expanded, onToggle }) => {
         {project.image && (
           <div className="project-block__media" aria-hidden="true">
             <img
-              src={project.image}
+              src={resolveAssetUrl(project.image)}
               alt=""
               className="project-block__media-img"
               loading="lazy"

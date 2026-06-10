@@ -25,7 +25,25 @@ const Portfolio = () => {
   const [loaded, setLoaded] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [adminOpen, setAdminOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const trackedSections = useRef(new Set());
+
+  // Unread-message badge on the editor button — only meaningful for the admin,
+  // so check the session first and stay silent for regular visitors.
+  useEffect(() => {
+    if (adminOpen) return;
+    let cancelled = false;
+    api
+      .me()
+      .then((s) => (s.authenticated ? api.getUnreadCount() : { count: 0 }))
+      .then(({ count }) => {
+        if (!cancelled) setUnreadCount(count);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [adminOpen]);
 
   // Visitor analytics: one pageview per load, one event per section per visit.
   useEffect(() => {
@@ -143,6 +161,11 @@ const Portfolio = () => {
         title="Edit portfolio (Ctrl/Cmd+Shift+E)"
       >
         ✎
+        {unreadCount > 0 && (
+          <span className="admin-fab-badge" aria-label={`${unreadCount} unread messages`}>
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </span>
+        )}
       </button>
 
       <AdminPanel open={adminOpen} onClose={() => setAdminOpen(false)} />

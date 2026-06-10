@@ -60,14 +60,21 @@ Interactive docs: `GET /docs`.
 |---|---|---|---|
 | GET | `/api/health` | – | Liveness |
 | GET | `/api/content` | – | Published content |
-| PUT | `/api/content` | admin | Replace content |
+| PUT | `/api/content` | admin | Publish content (archives the outgoing version, clears the draft) |
+| GET/PUT/DELETE | `/api/content/draft` | admin | Server-side working draft (autosave target) |
+| GET | `/api/content/versions` | admin | Last 10 published versions |
+| POST | `/api/content/versions/{id}/restore` | admin | Roll back to a version |
 | POST | `/api/contact` | rate-limited | Submit a message (+ honeypot field `website`) |
 | POST | `/api/auth/login` | rate-limited | Set session cookie |
 | POST | `/api/auth/logout` | admin | Clear session |
 | GET | `/api/auth/me` | – | `{authenticated, email}` |
 | GET | `/api/messages` | admin | List submissions |
+| GET | `/api/messages/unread-count` | admin | Unread badge count |
 | PATCH | `/api/messages/{id}` | admin | Mark read/unread |
 | DELETE | `/api/messages/{id}` | admin | Delete |
+| POST | `/api/images` | admin | Upload an image (≤ 5 MB; JPEG/PNG/WebP/GIF) |
+| GET | `/api/images/{id}` | – | Serve an uploaded image (immutable cache) |
+| DELETE | `/api/images/{id}` | admin | Delete an uploaded image |
 | POST | `/api/analytics/event` | – | Record pageview/section event |
 | GET | `/api/analytics/summary` | admin | Aggregated stats |
 

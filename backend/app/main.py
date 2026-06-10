@@ -41,13 +41,14 @@ def create_app() -> FastAPI:
         return {"status": "ok"}
 
     # Feature routers
-    from .routers import analytics, auth, contact, content, messages
+    from .routers import analytics, auth, contact, content, images, messages
 
     app.include_router(content.router)
     app.include_router(auth.router)
     app.include_router(contact.router)
     app.include_router(analytics.router)
     app.include_router(messages.router)
+    app.include_router(images.router)
 
     return app
 

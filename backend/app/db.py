@@ -9,6 +9,10 @@ logger = logging.getLogger("portfolio.db")
 
 # Single content document lives under this fixed _id.
 CONTENT_ID = "singleton"
+# Unpublished working draft lives alongside it under this _id.
+DRAFT_ID = "draft"
+# Number of published versions retained for rollback.
+MAX_VERSIONS = 10
 
 
 class _DBState:

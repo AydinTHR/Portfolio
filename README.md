@@ -20,9 +20,11 @@ A full-stack personal portfolio: a React 19 + Vite frontend backed by a FastAPI 
 
 **Backend** (see [backend/README.md](backend/README.md))
 - **Content API** — the site's content lives in MongoDB and is served from `GET /api/content`; the admin panel publishes updates that go live for every visitor instantly.
+- **Versioning & drafts** — every publish archives the previous version (last 10, one-click rollback), and edits autosave to a server-side draft that survives closing the tab.
 - **Admin authentication** — single-admin login (Argon2 + JWT in an httpOnly cookie) protects publishing, messages, and analytics.
-- **Contact pipeline** — validation, rate limiting, a honeypot spam trap, MongoDB persistence, and email notifications via Resend.
-- **First-party analytics** — page views and section engagement with a privacy-preserving daily visitor hash; summary dashboard in the admin panel.
+- **Contact pipeline** — validation, rate limiting, a honeypot spam trap, MongoDB persistence, and email notifications via Resend; unread-count badge on the editor button.
+- **First-party analytics** — page views and section engagement with a privacy-preserving daily visitor hash; summary dashboard with a 14-day views chart.
+- **Image uploads** — admin-uploaded images stored in MongoDB and served with immutable caching.
 
 ## Tech Stack
 
@@ -102,7 +104,10 @@ Click the ✎ pencil button (bottom right) or press `Ctrl / Cmd + Shift + E`, th
 ```bash
 cd backend && pytest      # API tests — no live database needed
 npx eslint src            # frontend lint
+npm run test:e2e          # Playwright end-to-end (needs MongoDB on localhost)
 ```
+
+Continuous integration runs all three suites on every push (see `.github/workflows/ci.yml`).
 
 ## Deploying
 

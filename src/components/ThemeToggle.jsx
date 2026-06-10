@@ -41,7 +41,9 @@ const ThemeToggle = () => {
     applyTheme(theme);
     try {
       localStorage.setItem(STORAGE_KEY, theme);
-    } catch {}
+    } catch {
+      /* storage unavailable (private mode) — theme still applies this session */
+    }
   }, [theme]);
 
   const toggle = () => setTheme((t) => (t === 'light' ? 'dark' : 'light'));
