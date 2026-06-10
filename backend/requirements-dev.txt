@@ -1,0 +1,7 @@
+-r requirements.txt
+pytest==9.0.3
+pytest-asyncio==1.4.0
+httpx==0.28.1
+asgi-lifespan==2.1.0
+mongomock-motor==0.0.36
+ruff==0.15.16

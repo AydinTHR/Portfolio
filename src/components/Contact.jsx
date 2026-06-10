@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useContent } from '../hooks/useContent';
+import { api } from '../lib/api';
 import { SOCIAL_ICONS, ArrowIcon } from './Icons';
 import CopyEmailButton from './polish/CopyEmailButton';
 import TimezonePill from './polish/TimezonePill';
@@ -41,6 +42,7 @@ const Field = ({ label, name, type = 'text', value, onChange, rows, maxLength, s
 const Contact = () => {
   const { content } = useContent();
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+  const [honeypot, setHoneypot] = useState('');
   const [status, setStatus] = useState('idle');
 
   const emailLink = content.contact.links.find((l) => l.type === 'email');
@@ -50,22 +52,34 @@ const Contact = () => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name || !formData.email || !formData.message) {
       showToast('Please fill in all fields');
       return;
     }
-    setStatus('success');
-    showToast('Message sent (demo)');
-    setFormData({ name: '', email: '', message: '' });
+    if (status === 'sending') return;
+    setStatus('sending');
+    try {
+      await api.submitContact({ ...formData, website: honeypot });
+      setStatus('success');
+      showToast('Message sent — thank you!');
+      setFormData({ name: '', email: '', message: '' });
+      setHoneypot('');
+    } catch (err) {
+      setStatus('error');
+      showToast(
+        err?.status === 429
+          ? 'Too many messages — please wait a minute and try again.'
+          : 'Could not send your message. Please try again.'
+      );
+    }
     setTimeout(() => setStatus('idle'), 2800);
   };
 
   return (
     <section id="contact" className="section">
       <div className="contact__inner animate-on-scroll">
-        <p className="section__label">05 — Contact</p>
         <h2 className="section__title">Get In Touch</h2>
         <p className="contact__intro">{content.contact.intro}</p>
 
@@ -75,6 +89,17 @@ const Contact = () => {
         </div>
 
         <form className="contact__form" onSubmit={handleSubmit}>
+          {/* Spam trap — hidden from real users, bots tend to fill it */}
+          <input
+            type="text"
+            name="website"
+            value={honeypot}
+            onChange={(e) => setHoneypot(e.target.value)}
+            className="contact__honeypot"
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
+          />
           <Field label="Your Name" name="name" value={formData.name} onChange={handleChange} />
           <Field
             label="Your Email"
@@ -94,11 +119,18 @@ const Contact = () => {
           />
           <button
             type="submit"
+            disabled={status === 'sending'}
             className={`btn-glass btn-magnetic contact__submit${
               status === 'success' ? ' contact__submit--success' : ''
             }`}
           >
-            {status === 'success' ? '✓ Message sent' : 'Send Message'}
+            {status === 'sending'
+              ? 'Sending…'
+              : status === 'success'
+                ? '✓ Message sent'
+                : status === 'error'
+                  ? 'Try again'
+                  : 'Send Message'}
           </button>
         </form>
 

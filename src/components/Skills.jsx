@@ -14,7 +14,6 @@ const Skills = () => {
   return (
     <section id="skills" className="section">
       <div className="section__content">
-        <p className="section__label">02 — Skills</p>
         <h2 className="section__title">My Skills</h2>
         <div className="skills__grid">
           {content.skills.map((skill, index) => (

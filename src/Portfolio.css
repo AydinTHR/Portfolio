@@ -334,16 +334,6 @@ html {
   pointer-events: auto;
 }
 
-.section__label {
-  font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
-  font-size: 0.75rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--accent);
-  margin-bottom: 0.75rem;
-  font-weight: 500;
-}
-
 .section__title {
   font-family: var(--font-heading);
   font-size: clamp(2rem, 5vw, 3rem);
@@ -959,39 +949,6 @@ html {
   transform: var(--hover-lift);
 }
 
-/* --- Custom Cursor --- */
-.cursor-dot {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 8px;
-  height: 8px;
-  background: var(--accent);
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 10000;
-}
-
-.cursor-ring {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 32px;
-  height: 32px;
-  border: 1.5px solid var(--accent);
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 10000;
-  transition: width 0.3s ease, height 0.3s ease, margin 0.3s ease;
-}
-
-.cursor-ring--hover {
-  width: 80px;
-  height: 80px;
-  margin-left: -24px;
-  margin-top: -24px;
-}
-
 /* --- Section Indicator --- */
 .section-indicator {
   position: fixed;
@@ -1354,42 +1311,134 @@ html {
   margin-top: 0.5rem;
 }
 
+/* --- Admin: header actions / publish --- */
+.admin-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.admin-btn--primary {
+  background: rgba(245, 166, 35, 0.18);
+  border-color: rgba(245, 166, 35, 0.5);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.admin-btn--primary:hover:not(:disabled) {
+  background: rgba(245, 166, 35, 0.3);
+}
+
+.admin-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.admin-dirty-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-left: 0.5rem;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
+  vertical-align: middle;
+}
+
+/* --- Admin: login gate --- */
+.admin-login {
+  max-width: 380px;
+  margin: 2.5rem auto;
+  padding: 0 1.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-login .admin-btn--primary {
+  margin-top: 1.25rem;
+  align-self: flex-start;
+}
+
+/* --- Admin: messages --- */
+.admin-msg--unread {
+  border-left: 3px solid var(--accent);
+}
+
+.admin-msg-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+  align-items: baseline;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.admin-msg-meta a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.admin-msg-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.admin-msg-body {
+  margin-top: 0.75rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+}
+
+/* --- Admin: analytics --- */
+.admin-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+
+.admin-stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: var(--glass-border);
+  border-radius: 10px;
+}
+
+.admin-stat-value {
+  font-family: var(--font-heading);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.admin-stat-label {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.admin-list-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+/* --- Contact honeypot (spam trap, hidden from real users) --- */
+.contact__honeypot {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* --- Responsive --- */
-@media (pointer: coarse) {
-  .cursor-dot, .cursor-ring { display: none; }
-}
-
-@media (pointer: fine) {
-  *, *::before, *::after {
-    cursor: none !important;
-  }
-
-  .admin-overlay,
-  .admin-overlay *,
-  .admin-overlay *::before,
-  .admin-overlay *::after {
-    cursor: auto !important;
-  }
-
-  .admin-overlay input,
-  .admin-overlay textarea {
-    cursor: text !important;
-  }
-
-  .admin-overlay button,
-  .admin-overlay .admin-tab,
-  .admin-overlay .admin-close,
-  .admin-overlay .admin-btn {
-    cursor: pointer !important;
-  }
-}
-
-/* Hide custom cursor when admin panel is open */
-body:has(.admin-overlay) .cursor-dot,
-body:has(.admin-overlay) .cursor-ring {
-  display: none;
-}
-
 @media (max-width: 768px) {
   .nav__list {
     position: fixed;
@@ -1461,10 +1510,6 @@ body:has(.admin-overlay) .cursor-ring {
   .section__title {
     text-align: center;
   }
-
-  .section__label {
-    text-align: center;
-  }
 }
 
 @media (max-width: 480px) {
@@ -1523,55 +1568,6 @@ body:has(.admin-overlay) .cursor-ring {
   height: 2px;
   background: linear-gradient(90deg, transparent 0%, var(--accent) 35%, #fff 100%);
   box-shadow: 0 0 14px var(--accent-glow), 0 0 30px rgba(245, 166, 35, 0.15);
-}
-
-/* ----- Availability pill ----- */
-.availability-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
-  padding: 0.4rem 0.9rem 0.4rem 0.75rem;
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  border: var(--glass-border);
-  border-radius: 999px;
-  font-family: var(--font-body);
-  font-size: 0.78rem;
-  color: var(--text-secondary);
-  letter-spacing: 0.04em;
-  margin-bottom: 1.25rem;
-  transition: background var(--transition), transform var(--transition);
-}
-
-.availability-pill:hover {
-  background: var(--glass-bg-hover);
-  transform: translateY(-2px);
-}
-
-.availability-pill__dot {
-  position: relative;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #3ddc97;
-  box-shadow: 0 0 8px #3ddc97;
-}
-
-.availability-pill__dot::after {
-  content: '';
-  position: absolute;
-  inset: -4px;
-  border-radius: 50%;
-  border: 1px solid #3ddc97;
-  animation: avail-pulse 2.2s ease-out infinite;
-}
-
-.availability-pill--off .availability-pill__dot { background: #888; box-shadow: none; }
-.availability-pill--off .availability-pill__dot::after { display: none; }
-
-@keyframes avail-pulse {
-  0% { transform: scale(0.6); opacity: 0.7; }
-  100% { transform: scale(2.2); opacity: 0; }
 }
 
 /* ----- Hero name char stagger ----- */
@@ -1982,12 +1978,14 @@ body:has(.admin-overlay) .cursor-ring {
 
 /* ----- Back to top magnetic ----- */
 .scroll-top {
+  /* Keep fixed: .btn-magnetic sets position:relative later in the cascade,
+     which would drop this button into document flow (off-frame + bottom gap). */
+  position: fixed;
   z-index: 100;
   transition: transform 0.2s ease-out, opacity 0.3s ease, background 0.25s ease, border 0.25s ease;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .availability-pill__dot::after { animation: none; }
   .hero__scroll-hint-line { animation: none; opacity: 0.5; }
   .section__title::after { transition: none; }
   .btn-ripple { display: none; }

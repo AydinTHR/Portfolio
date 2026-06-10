@@ -18,7 +18,6 @@ export const defaults = {
     stats: [
       { label: 'Years coding', value: 6 },
       { label: 'Projects shipped', value: 24 },
-      { label: 'Cups of coffee', value: 9001 },
     ],
   },
   skills: [
