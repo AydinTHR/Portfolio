@@ -3,7 +3,6 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import { useContent } from '../hooks/useContent';
 import useReducedMotionSafe from '../hooks/useReducedMotionSafe';
 import useMagnetic from '../hooks/useMagnetic';
-import AvailabilityPill from './polish/AvailabilityPill';
 import { stagger, charReveal, reduced as reducedVariant } from '../motion/variants';
 
 const SCRAMBLE_CHARS = '!<>-_\\/[]{}=+*^?#_____';
@@ -107,10 +106,6 @@ const Hero = ({ onNavigate }) => {
         className="hero__content"
         style={{ y: parallaxY, opacity: heroOpacity }}
       >
-        <AvailabilityPill
-          active={content.hero.availability?.active}
-          label={content.hero.availability?.label}
-        />
         <motion.h1
           className="hero__title"
           variants={stagger(0.04, 0.25)}

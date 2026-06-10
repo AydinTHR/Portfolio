@@ -9,7 +9,6 @@ const Experience = () => {
   return (
     <section id="experience" className="section">
       <div className="section__content">
-        <p className="section__label">03 — Experience</p>
         <h2 className="section__title">Work Experience</h2>
 
         <ol className="timeline" aria-label="Work history">

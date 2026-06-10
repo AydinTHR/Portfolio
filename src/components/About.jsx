@@ -13,7 +13,6 @@ const About = () => {
   return (
     <section id="about" className="section">
       <div className="section__content">
-        <p className="section__label">01 — About</p>
         <h2 className="section__title">About Me</h2>
         <div className="about__layout">
           <div className="about__avatar">

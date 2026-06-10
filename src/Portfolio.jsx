@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import './Portfolio.css';
+import { api } from './lib/api';
 import ContourBackground from './components/ContourBackground';
-import CustomCursor from './components/CustomCursor';
 import Nav from './components/Nav';
 import Hero from './components/Hero';
 import About from './components/About';
@@ -25,6 +25,22 @@ const Portfolio = () => {
   const [loaded, setLoaded] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [adminOpen, setAdminOpen] = useState(false);
+  const trackedSections = useRef(new Set());
+
+  // Visitor analytics: one pageview per load, one event per section per visit.
+  useEffect(() => {
+    api.trackEvent({
+      type: 'pageview',
+      path: window.location.pathname,
+      referrer: document.referrer || null,
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!activeSection || trackedSections.current.has(activeSection)) return;
+    trackedSections.current.add(activeSection);
+    api.trackEvent({ type: 'section', section: activeSection });
+  }, [activeSection]);
 
   const scrollToSection = (id) => {
     const element = document.getElementById(id);
@@ -98,7 +114,6 @@ const Portfolio = () => {
         <span className="page-loader__text">A</span>
       </div>
 
-      <CustomCursor />
       <div className="scroll-progress" style={{ width: `${scrollProgress}%` }} />
       <ContourBackground />
       <div className="aurora" aria-hidden="true">

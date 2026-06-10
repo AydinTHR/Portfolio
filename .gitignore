@@ -23,9 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 
-# Claude Code
-.claude/skills/
-.claude/worktrees/
+# Environment
+.env
 
 # Misc
 untitled.py
