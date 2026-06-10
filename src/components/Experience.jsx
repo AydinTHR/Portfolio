@@ -6,6 +6,9 @@ const Experience = () => {
   const { content } = useContent();
   const items = content.experience || [];
 
+  // Hide the section entirely until it has content to show.
+  if (!items.length) return null;
+
   return (
     <section id="experience" className="section">
       <div className="section__content">

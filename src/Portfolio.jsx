@@ -1,6 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import './Portfolio.css';
 import { api } from './lib/api';
+import { useContent } from './hooks/useContent';
 import ContourBackground from './components/ContourBackground';
 import Nav from './components/Nav';
 import Hero from './components/Hero';
@@ -18,9 +19,26 @@ import GrainOverlay from './components/polish/GrainOverlay';
 import Toast from './components/polish/Toast';
 import useScrollSpy from './hooks/useScrollSpy';
 
-const sections = ['home', 'about', 'skills', 'experience', 'projects', 'contact'];
-
 const Portfolio = () => {
+  const { content } = useContent();
+
+  // Sections with no items don't render, so keep nav, dots, and scroll-spy
+  // in sync with what's actually on the page.
+  const hasSkills = (content.skills?.length ?? 0) > 0;
+  const hasExperience = (content.experience?.length ?? 0) > 0;
+  const hasProjects = (content.projects?.length ?? 0) > 0;
+  const sections = useMemo(
+    () => [
+      'home',
+      'about',
+      ...(hasSkills ? ['skills'] : []),
+      ...(hasExperience ? ['experience'] : []),
+      ...(hasProjects ? ['projects'] : []),
+      'contact',
+    ],
+    [hasSkills, hasExperience, hasProjects]
+  );
+
   const activeSection = useScrollSpy(sections, 200);
   const [loaded, setLoaded] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);

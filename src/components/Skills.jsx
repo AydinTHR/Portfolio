@@ -11,6 +11,9 @@ const handleSpotlight = (e) => {
 const Skills = () => {
   const { content } = useContent();
 
+  // Hide the section entirely until it has content to show.
+  if (!content.skills?.length) return null;
+
   return (
     <section id="skills" className="section">
       <div className="section__content">

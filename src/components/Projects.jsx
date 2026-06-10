@@ -151,6 +151,9 @@ const Projects = () => {
 
   const toggle = (i) => setExpandedIndex((curr) => (curr === i ? null : i));
 
+  // Hide the section entirely until it has content to show.
+  if (!content.projects?.length) return null;
+
   return (
     <section id="projects" className="projects-section">
       <div className="projects__inner">
