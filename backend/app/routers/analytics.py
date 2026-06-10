@@ -78,12 +78,21 @@ async def summary(
         for s, c in sorted(section_counts.items(), key=lambda kv: kv[1], reverse=True)[:10]
     ]
 
-    day_counts: dict[str, int] = {}
+    # Continuous 14-day series, zero-filled so the chart has no gaps.
+    chart_window = 14
+    chart_start = now - dt.timedelta(days=chart_window - 1)
+    day_counts = {
+        (chart_start + dt.timedelta(days=i)).strftime("%Y-%m-%d"): 0
+        for i in range(chart_window)
+    }
+    window_floor = chart_start.replace(hour=0, minute=0, second=0, microsecond=0)
     async for doc in db.analytics_events.find(
-        {"type": "pageview", "created_at": {"$gte": d7}}, {"created_at": 1}
+        {"type": "pageview", "created_at": {"$gte": window_floor}},
+        {"created_at": 1},
     ):
         key = doc["created_at"].strftime("%Y-%m-%d")
-        day_counts[key] = day_counts.get(key, 0) + 1
+        if key in day_counts:
+            day_counts[key] += 1
     recent_days = [DayViews(date=k, views=day_counts[k]) for k in sorted(day_counts)]
 
     return AnalyticsSummary(

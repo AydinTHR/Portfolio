@@ -11,14 +11,9 @@ Planned work, roughly in priority order. Items move to "Done" once shipped.
 
 ## Improvements
 
-- [ ] **Image uploads to object storage** — profile/project images are currently data-URLs or hotlinks; store uploads in S3/Cloudflare R2 and serve by URL to keep the content document small.
-- [ ] **Unread-message badge** — show a count on the admin pencil button when there are unread contact messages.
-- [ ] **Analytics time-series chart** — replace the per-day rows with a small sparkline/bar chart in the Analytics tab.
-- [ ] **Draft autosave** — persist the admin draft to the server (separate draft document) so unpublished edits survive closing the tab.
-- [ ] **Content versioning** — keep the last N published versions with one-click rollback.
 - [ ] **API on a subdomain** — serve the API from `api.<domain>` so the auth cookie can stay `SameSite=Lax`.
-- [ ] **CI pipeline** — GitHub Actions: backend pytest + ruff, frontend eslint + build, on every push/PR.
-- [ ] **E2E tests** — Playwright happy-path: load site, submit contact form, admin login + publish.
+- [ ] **Image storage on S3/R2** — images currently live in MongoDB behind `/api/images/…`, which needs no external account; swapping the storage layer to S3/Cloudflare R2 later only changes the images router, not the API contract.
+- [ ] **Optimize bundled profile photo** — `src/assets/profile.jpg` is ~3 MB; compress/resize it to cut the build size.
 
 ## Nice to have
 
@@ -29,6 +24,13 @@ Planned work, roughly in priority order. Items move to "Done" once shipped.
 
 ## Done
 
+- [x] Image uploads — admin can upload profile/project images (5 MB cap, JPEG/PNG/WebP/GIF); stored in MongoDB and served from `/api/images/{id}` with immutable caching.
+- [x] Content versioning — every publish archives the previous version (last 10 kept); one-click restore in the admin Data tab.
+- [x] Draft autosave — edits autosave to a server-side draft (debounced) and are restored on the next sign-in; discard button included.
+- [x] Unread-message badge on the admin pencil button (admin session only).
+- [x] Analytics bar chart — continuous 14-day daily-views series, zero-filled server-side.
+- [x] CI pipeline — GitHub Actions: backend ruff + pytest, frontend eslint + build, Playwright E2E with a MongoDB service container.
+- [x] E2E tests — Playwright happy path: site loads from API, contact form submits, admin login → publish → change live.
 - [x] Backend API: content CMS, contact pipeline (storage + Resend email + rate limiting + honeypot), single-admin auth (Argon2 + httpOnly JWT cookie), first-party analytics with privacy-preserving visitor hashing.
 - [x] Frontend integration: API client, content fetched from the server with bundled fallback, real contact form, login-gated admin panel with draft → Publish workflow, Messages and Analytics tabs.
 - [x] Backend test suite (pytest, in-memory MongoDB) and lint (ruff); frontend lint clean.

@@ -88,6 +88,13 @@ const loadFromApi = () => {
   return fetchPromise;
 };
 
+// Replace the cached content (e.g. after a version restore) and notify all
+// mounted components.
+export const refreshContent = (next) => {
+  cachedContent = mergeContent(next);
+  window.dispatchEvent(new Event(UPDATE_EVENT));
+};
+
 export const useContent = () => {
   const [content, setContent] = useState(() => cachedContent || defaults);
 

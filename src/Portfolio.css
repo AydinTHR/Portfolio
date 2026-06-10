@@ -1428,6 +1428,96 @@ html {
   color: var(--text-secondary);
 }
 
+/* --- Admin: unread badge on the editor button --- */
+.admin-fab-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: var(--accent);
+  color: #111;
+  font-size: 0.66rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+/* --- Admin: draft autosave indicator --- */
+.admin-draft-state {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* --- Admin: analytics bar chart --- */
+.admin-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 140px;
+  padding: 0.5rem 0.25rem 0;
+}
+
+.admin-chart-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  gap: 4px;
+  min-width: 0;
+}
+
+.admin-chart-count {
+  font-size: 0.62rem;
+  color: var(--text-secondary);
+  line-height: 1;
+}
+
+.admin-chart-bar {
+  width: 100%;
+  max-width: 26px;
+  border-radius: 4px 4px 0 0;
+  background: linear-gradient(180deg, var(--accent) 0%, rgba(245, 166, 35, 0.35) 100%);
+  transition: height 0.3s ease;
+}
+
+.admin-chart-day {
+  font-size: 0.62rem;
+  color: var(--text-secondary);
+  line-height: 1;
+}
+
+/* --- Admin: versions + project image upload --- */
+.admin-version-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-right: 0.75rem;
+}
+
+.admin-image-url-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.admin-image-url-row .admin-input {
+  flex: 1;
+}
+
+.admin-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
 /* --- Contact honeypot (spam trap, hidden from real users) --- */
 .contact__honeypot {
   position: absolute;

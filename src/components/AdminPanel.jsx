@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useContent } from '../hooks/useContent';
+import { useContent, refreshContent } from '../hooks/useContent';
 import { defaults } from '../data/defaults';
-import { api } from '../lib/api';
+import { api, resolveAssetUrl } from '../lib/api';
 import { showToast } from './polish/Toast';
 
 const TABS = ['Hero', 'About', 'Skills', 'Experience', 'Projects', 'Contact', 'Messages', 'Analytics', 'Data'];
@@ -171,17 +171,81 @@ const AnalyticsTab = () => {
         <p className="admin-note">No section data yet.</p>
       )}
 
-      <label className="admin-label" style={{ marginTop: '1.25rem' }}>Views per day (7d)</label>
+      <label className="admin-label" style={{ marginTop: '1.25rem' }}>Views per day (14d)</label>
       {summary.recent_days.length ? (
-        summary.recent_days.map((d) => (
-          <div key={d.date} className="admin-list-row">
-            <span>{d.date}</span>
-            <span>{d.views.toLocaleString()}</span>
-          </div>
-        ))
+        <div className="admin-chart" role="img" aria-label="Daily page views, last 14 days">
+          {(() => {
+            const max = Math.max(...summary.recent_days.map((d) => d.views), 1);
+            return summary.recent_days.map((d) => (
+              <div key={d.date} className="admin-chart-col" title={`${d.date}: ${d.views} views`}>
+                <span className="admin-chart-count">{d.views > 0 ? d.views : ''}</span>
+                <div
+                  className="admin-chart-bar"
+                  style={{ height: `${Math.max((d.views / max) * 100, 2)}%` }}
+                />
+                <span className="admin-chart-day">{d.date.slice(8)}</span>
+              </div>
+            ));
+          })()}
+        </div>
       ) : (
         <p className="admin-note">No views recorded yet.</p>
       )}
+    </div>
+  );
+};
+
+const VersionsList = ({ onRestored }) => {
+  const [versions, setVersions] = useState(null);
+  const [busyId, setBusyId] = useState(null);
+
+  useEffect(() => {
+    api
+      .getVersions()
+      .then(setVersions)
+      .catch(() => setVersions([]));
+  }, []);
+
+  const restore = async (v) => {
+    if (!confirm(`Restore the version from ${parseUtcDate(v.archived_at)?.toLocaleString()}? The current version is archived first.`)) {
+      return;
+    }
+    setBusyId(v.id);
+    try {
+      const restored = await api.restoreVersion(v.id);
+      onRestored(restored);
+      const next = await api.getVersions();
+      setVersions(next);
+      showToast('Version restored — now live');
+    } catch {
+      showToast('Restore failed — please try again');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  if (!versions) return <p className="admin-note">Loading versions…</p>;
+  if (!versions.length) {
+    return <p className="admin-note">No published versions yet — publish once to start history.</p>;
+  }
+
+  return (
+    <div className="admin-versions">
+      {versions.map((v) => (
+        <div key={v.id} className="admin-list-row admin-version-row">
+          <span>
+            {parseUtcDate(v.archived_at)?.toLocaleString()}
+            {v.label ? ` — ${v.label}` : ''}
+          </span>
+          <button
+            className="admin-btn"
+            disabled={busyId === v.id}
+            onClick={() => restore(v)}
+          >
+            {busyId === v.id ? 'Restoring…' : 'Restore'}
+          </button>
+        </div>
+      ))}
     </div>
   );
 };
@@ -192,10 +256,12 @@ const AdminPanel = ({ open, onClose }) => {
   const [draft, setDraft] = useState(null);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [draftState, setDraftState] = useState('idle'); // idle | saving | saved
   const [tab, setTab] = useState('Hero');
   const [importError, setImportError] = useState('');
   const fileInputRef = useRef(null);
   const imageInputRef = useRef(null);
+  const draftRestored = useRef(false);
 
   useEffect(() => {
     if (!open) return;
@@ -224,6 +290,40 @@ const AdminPanel = ({ open, onClose }) => {
     }
   }, [open, content, dirty]);
 
+  // Once authenticated, restore any unpublished server draft from a previous session.
+  useEffect(() => {
+    if (!open || authed !== true || draftRestored.current) return;
+    draftRestored.current = true;
+    api
+      .getDraft()
+      .then((res) => {
+        if (res.exists && res.content) {
+          setDraft(res.content);
+          setDirty(true);
+          showToast('Restored unpublished draft');
+        }
+      })
+      .catch(() => {});
+  }, [open, authed]);
+
+  // Reset the restore guard when the panel closes so reopening checks again.
+  useEffect(() => {
+    if (!open) draftRestored.current = false;
+  }, [open]);
+
+  // Autosave the working draft to the server, debounced after the last edit.
+  useEffect(() => {
+    if (!open || !authed || !dirty || !draft) return;
+    setDraftState('saving');
+    const timer = setTimeout(() => {
+      api
+        .saveDraft(draft)
+        .then(() => setDraftState('saved'))
+        .catch(() => setDraftState('idle'));
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [open, authed, dirty, draft]);
+
   if (!open) return null;
 
   const publish = async () => {
@@ -232,6 +332,7 @@ const AdminPanel = ({ open, onClose }) => {
     try {
       await update(draft);
       setDirty(false);
+      setDraftState('idle'); // publish consumes the server draft
       showToast('Published — changes are live');
     } catch (err) {
       if (err?.status === 401) {
@@ -312,14 +413,27 @@ const AdminPanel = ({ open, onClose }) => {
     );
   };
 
+  const uploadTo = async (file, assign) => {
+    try {
+      const { url } = await api.uploadImage(file);
+      assign(url);
+      showToast('Image uploaded');
+    } catch (err) {
+      showToast(
+        err?.status === 413
+          ? 'Image too large (max 5 MB)'
+          : err?.status === 415
+            ? 'Unsupported image type'
+            : 'Upload failed — please try again'
+      );
+    }
+  };
+
   const onImageUpload = (e) => {
     const file = e.target.files[0];
+    e.target.value = '';
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      updateField('about', 'profileImage', ev.target.result);
-    };
-    reader.readAsDataURL(file);
+    uploadTo(file, (url) => updateField('about', 'profileImage', url));
   };
 
   const exportJson = () => {
@@ -415,7 +529,7 @@ const AdminPanel = ({ open, onClose }) => {
               <div className="admin-image-row">
                 <div className="admin-image-preview">
                   {draft.about.profileImage ? (
-                    <img src={draft.about.profileImage} alt="profile" />
+                    <img src={resolveAssetUrl(draft.about.profileImage)} alt="profile" />
                   ) : (
                     <span>Using default</span>
                   )}
@@ -781,15 +895,33 @@ const AdminPanel = ({ open, onClose }) => {
                       updateListItem('projects', i, { ...project, category: e.target.value })
                     }
                   />
-                  <label className="admin-label">Image URL (optional)</label>
-                  <input
-                    className="admin-input"
-                    value={project.image || ''}
-                    placeholder="https://... (leave blank for no image)"
-                    onChange={(e) =>
-                      updateListItem('projects', i, { ...project, image: e.target.value })
-                    }
-                  />
+                  <label className="admin-label">Image (URL or upload)</label>
+                  <div className="admin-image-url-row">
+                    <input
+                      className="admin-input"
+                      value={project.image || ''}
+                      placeholder="https://... (leave blank for no image)"
+                      onChange={(e) =>
+                        updateListItem('projects', i, { ...project, image: e.target.value })
+                      }
+                    />
+                    <label className="admin-btn admin-upload-btn">
+                      Upload
+                      <input
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          e.target.value = '';
+                          if (!file) return;
+                          uploadTo(file, (url) =>
+                            updateListItem('projects', i, { ...project, image: url })
+                          );
+                        }}
+                      />
+                    </label>
+                  </div>
                   <label className="admin-label">Title</label>
                   <input
                     className="admin-input"
@@ -972,8 +1104,8 @@ const AdminPanel = ({ open, onClose }) => {
           {tab === 'Data' && (
             <div className="admin-section">
               <p className="admin-note">
-                Edits stay in a local draft until you hit Publish, which saves them to the server
-                and makes them live for every visitor. Export a backup JSON, or import one to
+                Edits autosave to a server-side draft and stay private until you hit Publish,
+                which makes them live for every visitor. Export a backup JSON, or import one to
                 restore.
               </p>
               <div className="admin-data-actions">
@@ -994,6 +1126,23 @@ const AdminPanel = ({ open, onClose }) => {
                   style={{ display: 'none' }}
                 />
                 <button
+                  className="admin-btn admin-btn--ghost"
+                  onClick={async () => {
+                    if (!confirm('Discard the unpublished draft and return to the live version?')) return;
+                    try {
+                      await api.deleteDraft();
+                    } catch {
+                      /* draft may not exist server-side */
+                    }
+                    setDraft(JSON.parse(JSON.stringify(content)));
+                    setDirty(false);
+                    setDraftState('idle');
+                    showToast('Draft discarded');
+                  }}
+                >
+                  Discard Draft
+                </button>
+                <button
                   className="admin-btn admin-btn--danger"
                   onClick={() => {
                     if (confirm('Reset the draft to the original defaults? Publish afterwards to make it live.')) {
@@ -1006,6 +1155,21 @@ const AdminPanel = ({ open, onClose }) => {
                 </button>
               </div>
               {importError && <p className="admin-error">{importError}</p>}
+
+              <label className="admin-label" style={{ marginTop: '1.75rem' }}>
+                Published versions (latest 10)
+              </label>
+              <p className="admin-note">
+                Every publish archives the previous version. Restore puts an old version back live.
+              </p>
+              <VersionsList
+                onRestored={(restored) => {
+                  refreshContent(restored);
+                  setDraft(JSON.parse(JSON.stringify(restored)));
+                  setDirty(false);
+                  setDraftState('idle');
+                }}
+              />
             </div>
           )}
         </div>
@@ -1024,6 +1188,15 @@ const AdminPanel = ({ open, onClose }) => {
           <div className="admin-header-actions">
             {authed && (
               <>
+                {dirty && (
+                  <span className="admin-draft-state">
+                    {draftState === 'saving'
+                      ? 'Saving draft…'
+                      : draftState === 'saved'
+                        ? 'Draft saved'
+                        : ''}
+                  </span>
+                )}
                 <button
                   className="admin-btn admin-btn--primary"
                   onClick={publish}

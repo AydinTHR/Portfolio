@@ -26,6 +26,10 @@ dist-ssr
 # Environment
 .env
 
+# Test artifacts
+test-results/
+playwright-report/
+
 # Misc
 untitled.py
 *.pyc

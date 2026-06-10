@@ -5,7 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(['dist', 'e2e', 'playwright.config.js', 'test-results', 'playwright-report']),
   {
     files: ['**/*.{js,jsx}'],
     extends: [
@@ -23,7 +23,16 @@ export default defineConfig([
       },
     },
     rules: {
-      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      // "motion" is consumed through JSX member expressions (<motion.div>),
+      // which the core rule does not count as usage.
+      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]|^motion$' }],
+      // Advisory performance rule; the animation primitives in this codebase
+      // intentionally seed state from effects (typewriter, count-up, clocks).
+      'react-hooks/set-state-in-effect': 'off',
+      'react-refresh/only-export-components': [
+        'error',
+        { allowExportNames: ['showToast', 'SOCIAL_ICONS'] },
+      ],
     },
   },
 ])

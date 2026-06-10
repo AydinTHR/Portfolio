@@ -1,5 +1,3 @@
-from bson import ObjectId
-from bson.errors import InvalidId
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pymongo import ReturnDocument
@@ -7,6 +5,7 @@ from pymongo import ReturnDocument
 from ..db import get_db
 from ..models.message import MessageOut, MessageUpdate
 from ..security import get_current_admin
+from .common import oid_or_400
 
 router = APIRouter(prefix="/api/messages", tags=["messages"])
 
@@ -22,13 +21,13 @@ def _serialize(doc: dict) -> MessageOut:
     )
 
 
-def _oid(message_id: str) -> ObjectId:
-    try:
-        return ObjectId(message_id)
-    except (InvalidId, TypeError) as err:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid message id"
-        ) from err
+@router.get("/unread-count")
+async def unread_count(
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    _admin: str = Depends(get_current_admin),
+):
+    count = await db.messages.count_documents({"read": False})
+    return {"count": count}
 
 
 @router.get("", response_model=list[MessageOut])
@@ -50,7 +49,7 @@ async def update_message(
     _admin: str = Depends(get_current_admin),
 ):
     updated = await db.messages.find_one_and_update(
-        {"_id": _oid(message_id)},
+        {"_id": oid_or_400(message_id, "message id")},
         {"$set": {"read": payload.read}},
         return_document=ReturnDocument.AFTER,
     )
@@ -65,7 +64,7 @@ async def delete_message(
     db: AsyncIOMotorDatabase = Depends(get_db),
     _admin: str = Depends(get_current_admin),
 ):
-    result = await db.messages.delete_one({"_id": _oid(message_id)})
+    result = await db.messages.delete_one({"_id": oid_or_400(message_id, "message id")})
     if result.deleted_count == 0:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Message not found")
     return {"ok": True}
