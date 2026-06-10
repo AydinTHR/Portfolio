@@ -4,7 +4,7 @@ A full-stack personal portfolio: a React 19 + Vite frontend backed by a FastAPI 
 
 ## Live Demo
 
-> _Add your deployed URL here once live._
+**[aydintehrani.com](https://aydintehrani.com)** — frontend on Vercel, API at [api.aydintehrani.com](https://api.aydintehrani.com/api/health) on Render, data on MongoDB Atlas.
 
 ## Features
 
