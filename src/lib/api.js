@@ -59,7 +59,10 @@ export const api = {
 
   // Analytics
   trackEvent: (event) =>
-    request('/api/analytics/event', { method: 'POST', body: event }).catch(() => {}),
+    request('/api/analytics/event', {
+      method: 'POST',
+      body: { visitor: getVisitorId(), ...event },
+    }).catch(() => {}),
   getAnalyticsSummary: () => request('/api/analytics/summary'),
 
   // Images
@@ -68,6 +71,22 @@ export const api = {
     formData.append('file', file);
     return request('/api/images', { method: 'POST', formData });
   },
+};
+
+// Anonymous first-party device id so repeat visits from the same browser can
+// be counted. Lives only in this site's localStorage; null when storage is
+// unavailable (private mode), which the API tolerates.
+const getVisitorId = () => {
+  try {
+    let id = localStorage.getItem('pf-visitor-id');
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem('pf-visitor-id', id);
+    }
+    return id;
+  } catch {
+    return null;
+  }
 };
 
 // Stored image URLs are API paths ("/api/images/…"); point them at the API host.

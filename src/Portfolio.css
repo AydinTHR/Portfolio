@@ -2756,3 +2756,14 @@ html {
   font-weight: 700;
   flex-shrink: 0;
 }
+
+/* --- Admin: visitors list --- */
+.admin-visitor-meta {
+  white-space: nowrap;
+}
+
+.admin-visitor-last {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  margin-left: 0.4rem;
+}

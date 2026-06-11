@@ -171,6 +171,25 @@ const AnalyticsTab = () => {
         <p className="admin-note">No section data yet.</p>
       )}
 
+      <label className="admin-label" style={{ marginTop: '1.25rem' }}>
+        Devices (visits per visitor, your own visits excluded)
+      </label>
+      {summary.visitors?.length ? (
+        summary.visitors.map((v, i) => (
+          <div key={i} className="admin-list-row">
+            <span>{v.device}</span>
+            <span className="admin-visitor-meta">
+              {v.visits.toLocaleString()} {v.visits === 1 ? 'visit' : 'visits'}
+              <span className="admin-visitor-last">
+                · last {parseUtcDate(v.last_seen)?.toLocaleDateString()}
+              </span>
+            </span>
+          </div>
+        ))
+      ) : (
+        <p className="admin-note">No visitors recorded yet.</p>
+      )}
+
       <label className="admin-label" style={{ marginTop: '1.25rem' }}>Views per day (14d)</label>
       {summary.recent_days.length ? (
         <div className="admin-chart" role="img" aria-label="Daily page views, last 14 days">
