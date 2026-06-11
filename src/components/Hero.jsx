@@ -15,6 +15,19 @@ const Hero = ({ onNavigate }) => {
   const [subtitle, setSubtitle] = useState('');
   const subtitleRef = useRef({ titleIdx: 0, charIdx: 0, deleting: false, pauseTicks: 0 });
   const magnetic = useMagnetic(0.35);
+  const [resumeReady, setResumeReady] = useState(false);
+
+  // Show the resume button only when a real PDF is deployed; a missing file
+  // hits the SPA fallback (HTML), so the content-type check filters it out.
+  useEffect(() => {
+    fetch('/resume.pdf', { method: 'HEAD' })
+      .then((res) => {
+        if (res.ok && (res.headers.get('content-type') || '').includes('pdf')) {
+          setResumeReady(true);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const { scrollY } = useScroll();
   const parallaxY = useTransform(scrollY, [0, 600], [0, 240]);
@@ -142,16 +155,18 @@ const Hero = ({ onNavigate }) => {
           >
             View My Work
           </a>
-          <a
-            className="btn-glass btn-glass--outline btn-magnetic"
-            href="#"
-            onClick={(e) => e.preventDefault()}
-            onMouseMove={magnetic.onMove}
-            onMouseLeave={magnetic.onLeave}
-            onPointerDown={magnetic.onDown}
-          >
-            Download Resume
-          </a>
+          {resumeReady && (
+            <a
+              className="btn-glass btn-glass--outline btn-magnetic"
+              href="/resume.pdf"
+              download="Aydin-Tehrani-Resume.pdf"
+              onMouseMove={magnetic.onMove}
+              onMouseLeave={magnetic.onLeave}
+              onPointerDown={magnetic.onDown}
+            >
+              Download Resume
+            </a>
+          )}
         </div>
       </motion.div>
       <div className="hero__scroll-hint" aria-hidden="true">

@@ -11,6 +11,25 @@ test.describe('portfolio', () => {
     await expect(page.locator('#contact .section__title')).toHaveText('Get In Touch');
   });
 
+  test('project detail page opens from a card and returns home', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('#projects').scrollIntoViewIfNeeded();
+    // First demo project: "Dog Wash Booking System"
+    await page.locator('.project-block__btn', { hasText: 'View Details' }).first().click();
+    await expect(page).toHaveURL(/\/projects\/dog-wash-booking-system/);
+    await expect(page.locator('.project-detail__title')).toHaveText('Dog Wash Booking System');
+    await expect(page.locator('.project-detail__chip').first()).toBeVisible();
+    await expect(page.locator('.project-detail__highlights li').first()).toBeVisible();
+
+    await page.click('.project-detail__back');
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.locator('.hero__title')).toBeVisible();
+
+    // Unknown slugs bounce back to the homepage instead of breaking.
+    await page.goto('/projects/does-not-exist');
+    await expect(page).toHaveURL(/\/$/, { timeout: 10_000 });
+  });
+
   test('contact form submits a real message', async ({ page }) => {
     await page.goto('/');
     await page.locator('#contact').scrollIntoViewIfNeeded();
