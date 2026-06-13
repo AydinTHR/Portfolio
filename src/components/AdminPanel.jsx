@@ -131,12 +131,28 @@ const AnalyticsTab = () => {
   const [summary, setSummary] = useState(null);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    api
+  const load = useCallback(() => {
+    setError('');
+    return api
       .getAnalyticsSummary()
       .then(setSummary)
       .catch(() => setError('Could not load analytics.'));
   }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const resetAnalytics = async () => {
+    if (!confirm('Reset all analytics? This permanently deletes every recorded event.')) return;
+    try {
+      await api.resetAnalytics();
+      await load();
+      showToast('Analytics reset');
+    } catch {
+      showToast('Reset failed — please try again');
+    }
+  };
 
   if (error) return <p className="admin-error">{error}</p>;
   if (!summary) return <p className="admin-note">Loading analytics…</p>;
@@ -175,17 +191,19 @@ const AnalyticsTab = () => {
         Devices (visits per visitor, your own visits excluded)
       </label>
       {summary.visitors?.length ? (
-        summary.visitors.map((v, i) => (
-          <div key={i} className="admin-list-row">
-            <span>{v.device}</span>
-            <span className="admin-visitor-meta">
-              {v.visits.toLocaleString()} {v.visits === 1 ? 'visit' : 'visits'}
-              <span className="admin-visitor-last">
-                · last {parseUtcDate(v.last_seen)?.toLocaleDateString()}
+        <div className="admin-scroll-list">
+          {summary.visitors.map((v, i) => (
+            <div key={i} className="admin-list-row">
+              <span>{v.device}</span>
+              <span className="admin-visitor-meta">
+                {v.visits.toLocaleString()} {v.visits === 1 ? 'visit' : 'visits'}
+                <span className="admin-visitor-last">
+                  · last {parseUtcDate(v.last_seen)?.toLocaleDateString()}
+                </span>
               </span>
-            </span>
-          </div>
-        ))
+            </div>
+          ))}
+        </div>
       ) : (
         <p className="admin-note">No visitors recorded yet.</p>
       )}
@@ -210,6 +228,12 @@ const AnalyticsTab = () => {
       ) : (
         <p className="admin-note">No views recorded yet.</p>
       )}
+
+      <div className="admin-data-actions" style={{ marginTop: '1.5rem' }}>
+        <button className="admin-btn admin-btn--danger" onClick={resetAnalytics}>
+          Reset analytics
+        </button>
+      </div>
     </div>
   );
 };
@@ -243,6 +267,19 @@ const VersionsList = ({ onRestored }) => {
     }
   };
 
+  const clearAll = async () => {
+    if (!confirm('Delete all published versions? The current live version is kept; this only clears the rollback history and cannot be undone.')) {
+      return;
+    }
+    try {
+      await api.deleteAllVersions();
+      setVersions([]);
+      showToast('Cleared all version history');
+    } catch {
+      showToast('Could not clear history — please try again');
+    }
+  };
+
   if (!versions) return <p className="admin-note">Loading versions…</p>;
   if (!versions.length) {
     return <p className="admin-note">No published versions yet — publish once to start history.</p>;
@@ -265,6 +302,13 @@ const VersionsList = ({ onRestored }) => {
           </button>
         </div>
       ))}
+      {versions.length > 0 && (
+        <div className="admin-data-actions" style={{ marginTop: '0.85rem' }}>
+          <button className="admin-btn admin-btn--danger" onClick={clearAll}>
+            Clear all history
+          </button>
+        </div>
+      )}
     </div>
   );
 };

@@ -89,3 +89,27 @@ async def test_restore_bad_and_missing_ids(client):
     assert (
         await client.post("/api/content/versions/64b000000000000000000000/restore")
     ).status_code == 404
+
+
+async def test_delete_all_versions_requires_auth(client):
+    assert (await client.delete("/api/content/versions")).status_code == 401
+
+
+async def test_delete_all_versions_keeps_current(client):
+    await login(client)
+    base = await _published(client)
+    for i in range(3):
+        doc = {**base, "hero": {**base["hero"], "greeting": f"Rev {i}"}}
+        await client.put("/api/content", json=doc)
+
+    assert len((await client.get("/api/content/versions")).json()) == 3
+    live_before = await _published(client)
+
+    resp = await client.delete("/api/content/versions")
+    assert resp.status_code == 200
+    assert resp.json()["deleted_count"] == 3
+
+    # History is gone but the current published content is untouched.
+    assert (await client.get("/api/content/versions")).json() == []
+    assert (await _published(client))["hero"]["greeting"] == live_before["hero"]["greeting"]
+    assert live_before["hero"]["greeting"] == "Rev 2"

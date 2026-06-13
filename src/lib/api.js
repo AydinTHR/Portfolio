@@ -7,10 +7,12 @@ class ApiError extends Error {
   }
 }
 
-const request = async (path, { method = 'GET', body, formData } = {}) => {
+const request = async (path, { method = 'GET', body, formData, cache, signal } = {}) => {
   const res = await fetch(`${API_BASE}${path}`, {
     method,
     credentials: 'include',
+    cache,
+    signal,
     // For FormData the browser sets the multipart boundary header itself.
     headers: body ? { 'Content-Type': 'application/json' } : undefined,
     body: formData || (body ? JSON.stringify(body) : undefined),
@@ -29,7 +31,7 @@ const request = async (path, { method = 'GET', body, formData } = {}) => {
 
 export const api = {
   // Content
-  getContent: () => request('/api/content'),
+  getContent: (signal) => request('/api/content', { cache: 'no-store', signal }),
   putContent: (content) => request('/api/content', { method: 'PUT', body: content }),
 
   // Draft (admin working copy)
@@ -40,6 +42,7 @@ export const api = {
   // Versions (rollback history)
   getVersions: () => request('/api/content/versions'),
   restoreVersion: (id) => request(`/api/content/versions/${id}/restore`, { method: 'POST' }),
+  deleteAllVersions: () => request('/api/content/versions', { method: 'DELETE' }),
 
   // Contact
   submitContact: (data) => request('/api/contact', { method: 'POST', body: data }),
@@ -64,6 +67,7 @@ export const api = {
       body: { visitor: getVisitorId(), ...event },
     }).catch(() => {}),
   getAnalyticsSummary: () => request('/api/analytics/summary'),
+  resetAnalytics: () => request('/api/analytics/reset', { method: 'POST' }),
 
   // Images
   uploadImage: (file) => {

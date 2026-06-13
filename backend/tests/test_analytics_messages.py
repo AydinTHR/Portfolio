@@ -83,6 +83,33 @@ async def test_event_rejects_malformed_visitor_id(client):
     assert resp.status_code == 422
 
 
+async def test_analytics_reset_requires_auth(client):
+    assert (await client.post("/api/analytics/reset")).status_code == 401
+
+
+async def test_analytics_reset_zeros_everything(client):
+    # Events recorded while logged out (admin visits are dropped).
+    await client.post("/api/analytics/event", json={"type": "pageview"})
+    await client.post("/api/analytics/event", json={"type": "pageview"})
+    await client.post("/api/analytics/event", json={"type": "section", "section": "about"})
+
+    await login(client)
+    resp = await client.post("/api/analytics/reset")
+    assert resp.status_code == 200
+    assert resp.json()["deleted_count"] == 3
+
+    summary = (await client.get("/api/analytics/summary")).json()
+    assert summary["total_views"] == 0
+    assert summary["views_7d"] == 0
+    assert summary["views_30d"] == 0
+    assert summary["unique_visitors"] == 0
+    assert summary["visitors"] == []
+    assert summary["top_sections"] == []
+    # The chart stays a continuous zero-filled 14-day series, not an empty list.
+    assert len(summary["recent_days"]) == 14
+    assert all(d["views"] == 0 for d in summary["recent_days"])
+
+
 async def test_messages_list_requires_auth(client):
     assert (await client.get("/api/messages")).status_code == 401
     assert (await client.get("/api/messages/unread-count")).status_code == 401

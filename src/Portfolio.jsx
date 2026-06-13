@@ -20,7 +20,7 @@ import Toast from './components/polish/Toast';
 import useScrollSpy from './hooks/useScrollSpy';
 
 const Portfolio = () => {
-  const { content } = useContent();
+  const { content, loading } = useContent();
 
   // Sections with no items don't render, so keep nav, dots, and scroll-spy
   // in sync with what's actually on the page.
@@ -40,7 +40,6 @@ const Portfolio = () => {
   );
 
   const activeSection = useScrollSpy(sections, 200);
-  const [loaded, setLoaded] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [adminOpen, setAdminOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -84,11 +83,6 @@ const Portfolio = () => {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
-
-  useEffect(() => {
-    const timer = setTimeout(() => setLoaded(true), 300);
-    return () => clearTimeout(timer);
-  }, []);
 
   useEffect(() => {
     const onScroll = () => {
@@ -142,11 +136,14 @@ const Portfolio = () => {
       observer.disconnect();
       titleObs.disconnect();
     };
-  }, []);
+    // Re-attach once the gated section tree mounts (first load with no cache).
+  }, [loading]);
 
   return (
     <div className="portfolio">
-      <div className={`page-loader ${loaded ? 'loaded' : ''}`}>
+      {/* Covers the page until real content arrives, so a first-time visitor
+          never sees the bundled demo content flash before the live site. */}
+      <div className={`page-loader ${loading ? '' : 'loaded'}`}>
         <span className="page-loader__text">A</span>
       </div>
 
@@ -160,33 +157,38 @@ const Portfolio = () => {
       <div className="vignette" aria-hidden="true" />
       <GrainOverlay />
       <Toast />
-      <Nav sections={sections} activeSection={activeSection} onNavigate={scrollToSection} />
-      <SectionIndicator sections={sections} activeSection={activeSection} onNavigate={scrollToSection} />
-      <Hero onNavigate={scrollToSection} />
-      <About />
-      <Skills />
-      <Experience />
-      <Projects />
-      <Contact />
-      <Footer />
-      <ScrollToTop />
-      <ThemeToggle />
 
-      <button
-        className="admin-fab"
-        onClick={() => setAdminOpen(true)}
-        aria-label="Open editor (Ctrl+Shift+E)"
-        title="Edit portfolio (Ctrl/Cmd+Shift+E)"
-      >
-        ✎
-        {unreadCount > 0 && (
-          <span className="admin-fab-badge" aria-label={`${unreadCount} unread messages`}>
-            {unreadCount > 9 ? '9+' : unreadCount}
-          </span>
-        )}
-      </button>
+      {!loading && (
+        <>
+          <Nav sections={sections} activeSection={activeSection} onNavigate={scrollToSection} />
+          <SectionIndicator sections={sections} activeSection={activeSection} onNavigate={scrollToSection} />
+          <Hero onNavigate={scrollToSection} />
+          <About />
+          <Skills />
+          <Experience />
+          <Projects />
+          <Contact />
+          <Footer />
+          <ScrollToTop />
+          <ThemeToggle />
 
-      <AdminPanel open={adminOpen} onClose={() => setAdminOpen(false)} />
+          <button
+            className="admin-fab"
+            onClick={() => setAdminOpen(true)}
+            aria-label="Open editor (Ctrl+Shift+E)"
+            title="Edit portfolio (Ctrl/Cmd+Shift+E)"
+          >
+            ✎
+            {unreadCount > 0 && (
+              <span className="admin-fab-badge" aria-label={`${unreadCount} unread messages`}>
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </button>
+
+          <AdminPanel open={adminOpen} onClose={() => setAdminOpen(false)} />
+        </>
+      )}
     </div>
   );
 };

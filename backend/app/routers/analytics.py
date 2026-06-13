@@ -107,6 +107,16 @@ async def record_event(
     return {"ok": True}
 
 
+@router.post("/reset")
+async def reset_analytics(
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    _admin: str = Depends(get_current_admin),
+):
+    """Wipe all recorded events so every number returns to zero."""
+    result = await db.analytics_events.delete_many({})
+    return {"deleted_count": result.deleted_count}
+
+
 @router.get("/summary", response_model=AnalyticsSummary)
 async def summary(
     db: AsyncIOMotorDatabase = Depends(get_db),

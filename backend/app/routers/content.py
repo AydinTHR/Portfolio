@@ -96,6 +96,17 @@ async def list_versions(
     return out
 
 
+@router.delete("/versions")
+async def delete_all_versions(
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    _admin: str = Depends(get_current_admin),
+):
+    """Purge the rollback history. The live published content is a separate
+    document and is left untouched."""
+    result = await db.content_versions.delete_many({})
+    return {"deleted_count": result.deleted_count}
+
+
 @router.post("/versions/{version_id}/restore", response_model=PortfolioContent)
 async def restore_version(
     version_id: str,

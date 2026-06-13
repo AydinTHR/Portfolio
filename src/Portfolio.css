@@ -1446,6 +1446,20 @@ html {
   color: var(--text-secondary);
 }
 
+/* A capped, internally-scrolling list (e.g. the Devices box) so a long list
+   scrolls on its own instead of stretching the whole admin panel. */
+.admin-scroll-list {
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 6px;
+  padding: 0 0.5rem;
+}
+
+.admin-scroll-list .admin-list-row:last-child {
+  border-bottom: none;
+}
+
 /* --- Admin: unread badge on the editor button --- */
 .admin-fab-badge {
   position: absolute;
