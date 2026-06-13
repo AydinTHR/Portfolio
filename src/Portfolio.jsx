@@ -164,7 +164,6 @@ const Portfolio = () => {
       </div>
 
       <div className="scroll-progress" style={{ width: `${scrollProgress}%` }} />
-      <ContourBackground />
       <div className="aurora" aria-hidden="true">
         <span className="aurora__blob aurora__blob--amber" />
         <span className="aurora__blob aurora__blob--violet" />
@@ -176,6 +175,9 @@ const Portfolio = () => {
 
       {!loading && (
         <>
+          {/* Mounts with the sections so its hero-visibility observer can
+              find #home; otherwise the contour never fades past the hero. */}
+          <ContourBackground />
           <Nav sections={sections} activeSection={activeSection} onNavigate={scrollToSection} />
           <SectionIndicator sections={sections} activeSection={activeSection} onNavigate={scrollToSection} />
           <Hero onNavigate={scrollToSection} />
