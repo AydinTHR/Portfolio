@@ -43,7 +43,19 @@ const Portfolio = () => {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [adminOpen, setAdminOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [slowHint, setSlowHint] = useState(false);
   const trackedSections = useRef(new Set());
+
+  // On a cold server start the first load can take a while; after a few seconds
+  // of waiting, reassure the visitor that it's loading, not broken.
+  useEffect(() => {
+    if (!loading) {
+      setSlowHint(false);
+      return undefined;
+    }
+    const t = setTimeout(() => setSlowHint(true), 5000);
+    return () => clearTimeout(t);
+  }, [loading]);
 
   // Unread-message badge on the editor button — only meaningful for the admin,
   // so check the session first and stay silent for regular visitors.
@@ -146,6 +158,9 @@ const Portfolio = () => {
       <div className={`page-loader ${loading ? '' : 'loaded'}`}>
         <span className="page-loader__text">A</span>
         <span className="page-loader__spinner" aria-hidden="true" />
+        {slowHint && (
+          <span className="page-loader__hint">Waking the server, this can take a moment.</span>
+        )}
       </div>
 
       <div className="scroll-progress" style={{ width: `${scrollProgress}%` }} />
