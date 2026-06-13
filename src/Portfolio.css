@@ -533,8 +533,6 @@ html {
 /* --- Projects --- */
 .projects-section {
   padding: 6rem 2rem;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(12px);
   position: relative;
   z-index: 1;
   pointer-events: none;
@@ -560,28 +558,6 @@ html {
   border-radius: var(--glass-radius);
   overflow: hidden;
   transition: border-color 0.4s ease, background 0.4s ease;
-  --mx: 50%;
-  --my: 50%;
-}
-
-.project-block::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: radial-gradient(
-    500px circle at var(--mx) var(--my),
-    rgba(245, 166, 35, 0.06),
-    transparent 60%
-  );
-  opacity: 0;
-  transition: opacity 0.4s ease;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.project-block:hover::before {
-  opacity: 1;
 }
 
 .project-block:hover {
@@ -1633,6 +1609,16 @@ html {
     text-align: center;
   }
 
+  /* Center the stats so the two figures sit symmetrically once the layout
+     stacks, instead of hugging the left edge. */
+  .about__stats {
+    justify-content: center;
+  }
+  .about__stat {
+    align-items: center;
+    text-align: center;
+  }
+
   .skills__grid {
     grid-template-columns: 1fr 1fr;
   }
@@ -1673,7 +1659,9 @@ html {
 
   .contact__links {
     flex-direction: column;
-    align-items: center;
+    /* stretch (not center) so every link card is the same full width
+       regardless of how long the link text is */
+    align-items: stretch;
   }
 }
 
@@ -1876,21 +1864,6 @@ html {
   transform-style: preserve-3d;
   will-change: transform;
 }
-.project-block__glare {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  opacity: 0;
-  background: radial-gradient(
-    300px circle at var(--glare-x, 50%) var(--glare-y, 50%),
-    rgba(255, 255, 255, 0.12),
-    transparent 60%
-  );
-  transition: opacity 0.4s ease;
-  mix-blend-mode: overlay;
-}
-.project-block:hover .project-block__glare { opacity: 1; }
 
 .project-block__highlights {
   overflow: hidden;
@@ -1988,7 +1961,6 @@ html {
 }
 
 .contact__copy-email {
-  margin-top: 0.25rem;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -2328,14 +2300,16 @@ html {
 
 .timeline__dot {
   position: absolute;
-  left: -2.5rem;
-  top: 1.6rem;
+  /* Centered on the rail (rail center is at 0.85rem within the ol; the item's
+     content box starts at the ol's 2.5rem padding) and lifted to sit at the
+     top of the card, aligned with the role title. */
+  left: -2.09rem;
+  top: 0.4rem;
   width: 14px;
   height: 14px;
   border-radius: 50%;
   background: #000;
   border: 2px solid var(--accent);
-  transform: translateX(2px);
   box-shadow: 0 0 12px rgba(245, 166, 35, 0.4);
   z-index: 1;
 }
@@ -2477,7 +2451,7 @@ html {
     left: 0.6rem;
   }
   .timeline__dot {
-    left: -2rem;
+    left: -1.84rem;
   }
   .timeline__card {
     padding: 1.25rem 1.25rem;
@@ -2570,11 +2544,6 @@ html {
 [data-theme="light"] .portfolio {
   background: #f5f4f0;
   color: var(--text-secondary);
-}
-
-[data-theme="light"] .projects-section {
-  background: rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(12px);
 }
 
 [data-theme="light"] .project-block,

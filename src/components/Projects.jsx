@@ -14,8 +14,6 @@ const ProjectCard = ({ project, index, slug }) => {
   const reduced = useReducedMotionSafe();
   const rx = useMotionValue(0);
   const ry = useMotionValue(0);
-  const gx = useMotionValue(50);
-  const gy = useMotionValue(50);
   const rxSpring = useSpring(rx, SPRING);
   const rySpring = useSpring(ry, SPRING);
   const rotateX = useTransform(rxSpring, (v) => `${v}deg`);
@@ -30,12 +28,6 @@ const ProjectCard = ({ project, index, slug }) => {
     const y = (e.clientY - rect.top) / rect.height;
     rx.set((0.5 - y) * TILT_AMOUNT);
     ry.set((x - 0.5) * TILT_AMOUNT);
-    gx.set(x * 100);
-    gy.set(y * 100);
-    e.currentTarget.style.setProperty('--mx', `${e.clientX - rect.left}px`);
-    e.currentTarget.style.setProperty('--my', `${e.clientY - rect.top}px`);
-    e.currentTarget.style.setProperty('--glare-x', `${x * 100}%`);
-    e.currentTarget.style.setProperty('--glare-y', `${y * 100}%`);
   };
 
   const handleLeave = () => {
@@ -54,8 +46,6 @@ const ProjectCard = ({ project, index, slug }) => {
         className="project-block__tilt"
         style={{ rotateX, rotateY }}
       >
-        <div className="project-block__glare" aria-hidden="true" />
-
         {project.image && (
           <div className="project-block__media" aria-hidden="true">
             <img
