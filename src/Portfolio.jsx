@@ -141,10 +141,11 @@ const Portfolio = () => {
 
   return (
     <div className="portfolio">
-      {/* Covers the page until real content arrives, so a first-time visitor
-          never sees the bundled demo content flash before the live site. */}
+      {/* Covers the page until the real, current content arrives from the API,
+          so a visitor never sees a stale or demo version before the live site. */}
       <div className={`page-loader ${loading ? '' : 'loaded'}`}>
         <span className="page-loader__text">A</span>
+        <span className="page-loader__spinner" aria-hidden="true" />
       </div>
 
       <div className="scroll-progress" style={{ width: `${scrollProgress}%` }} />

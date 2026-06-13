@@ -66,10 +66,11 @@ const mergeContent = (parsed) => {
   };
 };
 
-// Last-known-good cache of the raw API payload (pre-merge), so a returning
-// visitor gets an instant, correct first paint instead of the bundled demo
-// content. Raw is stored (not the merged shape) so a future defaults.js change
-// re-merges cleanly on the next load.
+// Last-known-good cache of the raw API payload (pre-merge). It is used ONLY as
+// an offline fallback when the live fetch fails — never to paint optimistically
+// on load — so a visitor can never see a stale remembered copy before the real,
+// current content arrives. Raw is stored (not the merged shape) so a future
+// defaults.js change re-merges cleanly.
 const CACHE_KEY = 'pf-content-cache';
 
 const readCache = () => {
@@ -90,17 +91,17 @@ const persistCache = (raw) => {
 };
 
 // Module-level cache: the content is fetched once per page load and shared by
-// every component that calls useContent(). Seeds from localStorage so a repeat
-// visitor never sees stale bundled defaults.
-const seeded = readCache();
-let cachedContent = seeded ? mergeContent(seeded) : null;
+// every component that calls useContent(). We deliberately do NOT seed from
+// localStorage — the page waits for the live API before rendering any content,
+// so a visitor never sees a stale or placeholder version first.
+let cachedContent = null;
 let firstFetchSettled = false;
 let fetchPromise = null;
 
 const loadFromApi = () => {
   if (!fetchPromise) {
     // Bound the request so a hung cold-start connection eventually resolves to
-    // the cache/offline path rather than spinning forever.
+    // the offline path rather than spinning forever.
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 60000);
     fetchPromise = api
@@ -111,9 +112,10 @@ const loadFromApi = () => {
         return cachedContent;
       })
       .catch(() => {
-        // Network failure: keep showing the cache if we have one, else fall
-        // back to the bundled defaults so the site still renders.
-        cachedContent = cachedContent || defaults;
+        // Fetch failed/aborted (server unreachable): fall back to the visitor's
+        // last-known-good content if we have it, otherwise the bundled defaults.
+        const offline = readCache();
+        cachedContent = offline ? mergeContent(offline) : defaults;
         return cachedContent;
       })
       .finally(() => {
@@ -134,9 +136,10 @@ export const refreshContent = (next) => {
 
 export const useContent = () => {
   const [content, setContent] = useState(() => cachedContent);
-  // Only the first-ever visit (no cache yet) waits; returning visitors render
-  // their cached content immediately and revalidate in the background.
-  const [loading, setLoading] = useState(() => cachedContent === null && !firstFetchSettled);
+  // Always wait for the live fetch before showing content, so a visitor never
+  // sees a stale or placeholder version first. Once the fetch has settled for
+  // this page load, later consumers (e.g. the admin panel) skip the wait.
+  const [loading, setLoading] = useState(() => !firstFetchSettled);
 
   useEffect(() => {
     let mounted = true;
