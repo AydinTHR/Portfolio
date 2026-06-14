@@ -634,7 +634,9 @@ html {
   line-height: 1.1;
   margin-bottom: 0;
   position: relative;
-  display: inline-block;
+  /* Block so the category pill always sits on its own line above the title
+     (with the pill's bottom margin as the gap) instead of crowding it. */
+  display: block;
   padding-bottom: 0.75rem;
 }
 
@@ -2027,11 +2029,18 @@ html {
 }
 
 /* ----- Toast ----- */
-.toast {
+.toast-viewport {
   position: fixed;
-  left: 50%;
+  left: 0;
+  right: 0;
   bottom: 2rem;
-  transform: translateX(-50%);
+  display: flex;
+  justify-content: center;
+  z-index: 10000;
+  pointer-events: none;
+}
+
+.toast {
   padding: 0.85rem 1.3rem;
   background: rgba(10, 10, 10, 0.9);
   backdrop-filter: var(--glass-blur);
@@ -2041,7 +2050,6 @@ html {
   font-size: 0.9rem;
   font-family: var(--font-body);
   letter-spacing: 0.02em;
-  z-index: 10000;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 30px var(--accent-glow);
   display: flex;
   align-items: center;
@@ -2152,7 +2160,7 @@ html {
 
 .project-block__category {
   display: inline-block;
-  margin: 0 0 0.6rem 0;
+  margin: 0 0 0.9rem 0;
   padding: 0.25rem 0.65rem;
   font-family: var(--font-body);
   font-size: 0.68rem;
