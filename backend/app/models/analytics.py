@@ -21,6 +21,11 @@ class SectionCount(BaseModel):
     count: int
 
 
+class LabelCount(BaseModel):
+    label: str
+    count: int
+
+
 class DayViews(BaseModel):
     date: str
     views: int
@@ -37,6 +42,12 @@ class AnalyticsSummary(BaseModel):
     views_7d: int
     views_30d: int
     unique_visitors: int
+    new_visitors: int = 0
+    returning_visitors: int = 0
     top_sections: list[SectionCount] = []
+    sources: list[LabelCount] = []
+    top_pages: list[LabelCount] = []
     recent_days: list[DayViews] = []
     visitors: list[VisitorRow] = []
+    by_weekday: list[int] = []  # 7 buckets, Mon..Sun
+    by_hour: list[int] = []  # 24 buckets, hour of day (UTC)

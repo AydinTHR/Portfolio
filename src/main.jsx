@@ -10,6 +10,9 @@ createRoot(document.getElementById('root')).render(
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<App />} />
+        {/* Secret entrance to the editor (no visible button); the login still
+            guards everything. */}
+        <Route path="/admin" element={<App openAdmin />} />
         <Route path="/projects/:slug" element={<ProjectDetail />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

@@ -30,6 +30,56 @@ async def test_analytics_event_and_summary(client):
     assert len(summary["recent_days"]) == 14
     assert summary["recent_days"][-1]["views"] == 2
     assert all(d["views"] == 0 for d in summary["recent_days"][:-1])
+    # Peak-time buckets are always present and full-width.
+    assert len(summary["by_weekday"]) == 7
+    assert len(summary["by_hour"]) == 24
+    assert sum(summary["by_weekday"]) == 2
+    assert sum(summary["by_hour"]) == 2
+
+
+async def test_analytics_sources_pages_and_new_returning(client):
+    v1 = "11111111-1111-1111-1111-111111111111"
+    v2 = "22222222-2222-2222-2222-222222222222"
+    # v1: two pageviews from Google, on Home and a project page.
+    await client.post(
+        "/api/analytics/event",
+        json={
+            "type": "pageview",
+            "path": "/",
+            "referrer": "https://www.google.com/",
+            "visitor": v1,
+        },
+    )
+    await client.post(
+        "/api/analytics/event",
+        json={
+            "type": "pageview",
+            "path": "/projects/dog-wash",
+            "referrer": "https://www.google.com/",
+            "visitor": v1,
+        },
+    )
+    # v2: one direct pageview (no referrer) on Home.
+    await client.post(
+        "/api/analytics/event",
+        json={"type": "pageview", "path": "/", "referrer": None, "visitor": v2},
+    )
+
+    await login(client)
+    summary = (await client.get("/api/analytics/summary")).json()
+
+    sources = {s["label"]: s["count"] for s in summary["sources"]}
+    assert sources["Search"] == 2
+    assert sources["Direct"] == 1
+
+    pages = {p["label"]: p["count"] for p in summary["top_pages"]}
+    assert pages["Home"] == 2
+    assert pages["Project: dog-wash"] == 1
+
+    # Both visitors first seen today -> both "new", none returning yet.
+    assert summary["unique_visitors"] == 2
+    assert summary["new_visitors"] == 2
+    assert summary["returning_visitors"] == 0
 
 
 IPHONE_UA = (

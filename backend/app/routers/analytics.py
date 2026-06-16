@@ -10,6 +10,7 @@ from ..models.analytics import (
     AnalyticsSummary,
     DayViews,
     EventIn,
+    LabelCount,
     SectionCount,
     VisitorRow,
 )
@@ -18,16 +19,50 @@ from ..security import COOKIE_NAME, decode_token, get_current_admin
 router = APIRouter(prefix="/api/analytics", tags=["analytics"])
 
 
-def _visitor_hash(request: Request, day: str) -> str:
-    """Coarse, privacy-preserving visitor id: salted daily hash of IP + UA.
+def _visitor_hash(request: Request, period: str) -> str:
+    """Coarse, privacy-preserving visitor id: salted hash of IP + UA.
 
-    Rotates daily and stores no raw PII. Fallback grouping key for events
-    sent without a client-side visitor id.
+    Rotates per ISO week (not daily) so a repeat visitor without first-party
+    storage isn't counted as a brand-new person every day, while still storing
+    no raw PII. Used as the fallback grouping key when there's no client id.
     """
     ip = request.client.host if request.client else ""
     ua = request.headers.get("user-agent", "")
-    raw = f"{settings.analytics_salt}:{day}:{ip}:{ua}"
+    raw = f"{settings.analytics_salt}:{period}:{ip}:{ua}"
     return hashlib.sha256(raw.encode()).hexdigest()[:32]
+
+
+def _categorize_referrer(referrer: str | None) -> str:
+    """Bucket a raw referrer into a readable traffic source."""
+    if not referrer:
+        return "Direct"
+    r = referrer.lower()
+    if "aydintehrani.com" in r:
+        return "Direct"
+    if any(s in r for s in ("google.", "bing.", "duckduckgo.", "yahoo.", "ecosia.")):
+        return "Search"
+    if "linkedin." in r or "lnkd.in" in r:
+        return "LinkedIn"
+    if "github." in r:
+        return "GitHub"
+    if "t.co" in r or "twitter." in r or "//x.com" in r or ".x.com" in r:
+        return "X / Twitter"
+    if "instagram." in r:
+        return "Instagram"
+    if "reddit." in r:
+        return "Reddit"
+    if "facebook." in r or "fb.com" in r:
+        return "Facebook"
+    return "Other"
+
+
+def _page_label(path: str | None) -> str:
+    """Human-readable label for a tracked path."""
+    if not path or path == "/":
+        return "Home"
+    if path.startswith("/projects/"):
+        return f"Project: {path[len('/projects/'):]}"
+    return path
 
 
 def _is_admin(request: Request) -> bool:
@@ -91,7 +126,7 @@ async def record_event(
         return {"ok": True}
 
     now = dt.datetime.now(dt.UTC)
-    day = now.strftime("%Y-%m-%d")
+    week = now.strftime("%G-W%V")
     await db.analytics_events.insert_one(
         {
             "type": payload.type,
@@ -100,7 +135,7 @@ async def record_event(
             "referrer": payload.referrer,
             "visitor": payload.visitor,
             "device": _parse_device(request.headers.get("user-agent", "")),
-            "visitor_hash": _visitor_hash(request, day),
+            "visitor_hash": _visitor_hash(request, week),
             "created_at": now,
         }
     )
@@ -157,23 +192,34 @@ async def summary(
     }
     window_floor = chart_start.replace(hour=0, minute=0, second=0, microsecond=0)
 
-    # Per-device visit counts: group pageviews by the stable client-side
-    # visitor id, falling back to the daily hash for events that lack one.
+    # One pass over all pageviews powers: the 14-day chart, all-time per-device
+    # rows, and the last-30d breakdowns (sources, pages, peak times, uniques,
+    # new-vs-returning). Visitors are grouped by the stable client id, falling
+    # back to the weekly hash for events that lack one.
     visitor_rows: dict[str, dict] = {}
-    unique_30d: set[str] = set()
+    visitor_days: dict[str, set] = {}  # last-30d distinct days per visitor
+    sources_counts: dict[str, int] = {}
+    page_counts: dict[str, int] = {}
+    by_weekday = [0] * 7
+    by_hour = [0] * 24
     async for doc in db.analytics_events.find(
         {"type": "pageview"},
-        {"visitor": 1, "visitor_hash": 1, "device": 1, "created_at": 1},
+        {
+            "visitor": 1,
+            "visitor_hash": 1,
+            "device": 1,
+            "created_at": 1,
+            "path": 1,
+            "referrer": 1,
+        },
     ):
         created = doc["created_at"]
+        c = created if created.tzinfo else created.replace(tzinfo=dt.UTC)
         key = doc.get("visitor") or doc.get("visitor_hash") or "unknown"
-
         day_key = created.strftime("%Y-%m-%d")
-        if day_key in day_counts and created >= window_floor.replace(tzinfo=created.tzinfo):
-            day_counts[day_key] += 1
 
-        if created.replace(tzinfo=dt.UTC) >= d30:
-            unique_30d.add(key)
+        if day_key in day_counts and c >= window_floor:
+            day_counts[day_key] += 1
 
         row = visitor_rows.setdefault(
             key,
@@ -185,18 +231,44 @@ async def summary(
             if doc.get("device"):
                 row["device"] = doc["device"]
 
+        if c >= d30:
+            visitor_days.setdefault(key, set()).add(day_key)
+            src = _categorize_referrer(doc.get("referrer"))
+            sources_counts[src] = sources_counts.get(src, 0) + 1
+            page = _page_label(doc.get("path"))
+            page_counts[page] = page_counts.get(page, 0) + 1
+            by_weekday[c.weekday()] += 1
+            by_hour[c.hour] += 1
+
+    unique_30d = len(visitor_days)
+    returning = sum(1 for days in visitor_days.values() if len(days) >= 2)
+
     recent_days = [DayViews(date=k, views=day_counts[k]) for k in sorted(day_counts)]
     visitors = [
         VisitorRow(device=r["device"], visits=r["visits"], last_seen=r["last_seen"])
         for r in sorted(visitor_rows.values(), key=lambda r: r["visits"], reverse=True)[:20]
+    ]
+    sources = [
+        LabelCount(label=k, count=v)
+        for k, v in sorted(sources_counts.items(), key=lambda kv: kv[1], reverse=True)[:10]
+    ]
+    top_pages = [
+        LabelCount(label=k, count=v)
+        for k, v in sorted(page_counts.items(), key=lambda kv: kv[1], reverse=True)[:10]
     ]
 
     return AnalyticsSummary(
         total_views=total,
         views_7d=v7,
         views_30d=v30,
-        unique_visitors=len(unique_30d),
+        unique_visitors=unique_30d,
+        new_visitors=unique_30d - returning,
+        returning_visitors=returning,
         top_sections=top_sections,
+        sources=sources,
+        top_pages=top_pages,
         recent_days=recent_days,
         visitors=visitors,
+        by_weekday=by_weekday,
+        by_hour=by_hour,
     )

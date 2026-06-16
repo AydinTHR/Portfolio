@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useContent, refreshContent } from '../hooks/useContent';
 import { defaults } from '../data/defaults';
-import { api, resolveAssetUrl } from '../lib/api';
+import { api, resolveAssetUrl, isOwnerDevice, setOwnerDevice } from '../lib/api';
 import { showToast } from './polish/Toast';
 
-const TABS = ['Hero', 'About', 'Skills', 'Experience', 'Projects', 'Contact', 'Messages', 'Analytics', 'Data'];
+const TABS = ['Hero', 'About', 'Skills', 'Projects', 'Experience', 'Contact', 'Messages', 'Analytics', 'Data'];
 const SOCIAL_TYPES = ['email', 'github', 'linkedin', 'twitter', 'instagram'];
 
 // Mongo stores timestamps in UTC without an explicit offset; normalize before parsing.
@@ -26,6 +26,8 @@ const LoginGate = ({ onAuthed }) => {
     setError('');
     try {
       await api.login(creds.email, creds.password);
+      // From now on, this device's own visits are excluded from analytics.
+      setOwnerDevice(true);
       onAuthed();
     } catch (err) {
       setError(
@@ -127,9 +129,40 @@ const MessagesTab = () => {
   );
 };
 
+const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+// Small labelled count list (traffic sources, top pages, sections).
+const CountList = ({ rows, labelKey, emptyText, scroll }) => {
+  if (!rows?.length) return <p className="admin-note">{emptyText}</p>;
+  const list = rows.map((r, i) => (
+    <div key={i} className="admin-list-row">
+      <span>{r[labelKey]}</span>
+      <span>{r.count.toLocaleString()}</span>
+    </div>
+  ));
+  return scroll ? <div className="admin-scroll-list">{list}</div> : <>{list}</>;
+};
+
+// Compact bar chart for a fixed set of buckets (weekday / hour-of-day).
+const MiniBars = ({ values, labelFor, ariaLabel }) => {
+  const max = Math.max(...values, 1);
+  return (
+    <div className="admin-chart" role="img" aria-label={ariaLabel}>
+      {values.map((v, i) => (
+        <div key={i} className="admin-chart-col" title={`${labelFor(i)}: ${v}`}>
+          <span className="admin-chart-count">{v > 0 ? v : ''}</span>
+          <div className="admin-chart-bar" style={{ height: `${Math.max((v / max) * 100, 2)}%` }} />
+          <span className="admin-chart-day">{labelFor(i)}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 const AnalyticsTab = () => {
   const [summary, setSummary] = useState(null);
   const [error, setError] = useState('');
+  const [excludeMe, setExcludeMe] = useState(isOwnerDevice());
 
   const load = useCallback(() => {
     setError('');
@@ -154,6 +187,13 @@ const AnalyticsTab = () => {
     }
   };
 
+  const toggleExclude = () => {
+    const next = !excludeMe;
+    setOwnerDevice(next);
+    setExcludeMe(next);
+    showToast(next ? 'This device is excluded from analytics' : 'This device is now tracked');
+  };
+
   if (error) return <p className="admin-error">{error}</p>;
   if (!summary) return <p className="admin-note">Loading analytics…</p>;
 
@@ -162,7 +202,12 @@ const AnalyticsTab = () => {
     { label: 'Last 7 days', value: summary.views_7d },
     { label: 'Last 30 days', value: summary.views_30d },
     { label: 'Unique visitors (30d)', value: summary.unique_visitors },
+    { label: 'New visitors (30d)', value: summary.new_visitors ?? 0 },
+    { label: 'Returning (30d)', value: summary.returning_visitors ?? 0 },
   ];
+
+  // 24 hour buckets are dense; only label every 4th tick.
+  const hourLabel = (h) => (h % 4 === 0 ? `${h}` : '');
 
   return (
     <div className="admin-section">
@@ -175,17 +220,18 @@ const AnalyticsTab = () => {
         ))}
       </div>
 
+      <label className="admin-label" style={{ marginTop: '1.25rem' }}>Traffic sources (30d)</label>
+      <CountList rows={summary.sources} labelKey="label" emptyText="No traffic yet." scroll />
+
+      <label className="admin-label" style={{ marginTop: '1.25rem' }}>Top pages (30d)</label>
+      <CountList rows={summary.top_pages} labelKey="label" emptyText="No page views yet." scroll />
+
       <label className="admin-label" style={{ marginTop: '1.25rem' }}>Top sections (30d)</label>
-      {summary.top_sections.length ? (
-        summary.top_sections.map((s) => (
-          <div key={s.section} className="admin-list-row">
-            <span>{s.section}</span>
-            <span>{s.count.toLocaleString()}</span>
-          </div>
-        ))
-      ) : (
-        <p className="admin-note">No section data yet.</p>
-      )}
+      <CountList
+        rows={summary.top_sections}
+        labelKey="section"
+        emptyText="No section data yet."
+      />
 
       <label className="admin-label" style={{ marginTop: '1.25rem' }}>
         Devices (visits per visitor, your own visits excluded)
@@ -229,7 +275,32 @@ const AnalyticsTab = () => {
         <p className="admin-note">No views recorded yet.</p>
       )}
 
-      <div className="admin-data-actions" style={{ marginTop: '1.5rem' }}>
+      {summary.by_weekday?.length === 7 && (
+        <>
+          <label className="admin-label" style={{ marginTop: '1.25rem' }}>Busiest day (30d)</label>
+          <MiniBars
+            values={summary.by_weekday}
+            labelFor={(i) => WEEKDAYS[i]}
+            ariaLabel="Views by day of week"
+          />
+        </>
+      )}
+
+      {summary.by_hour?.length === 24 && (
+        <>
+          <label className="admin-label" style={{ marginTop: '1.25rem' }}>
+            Busiest hour (30d, UTC)
+          </label>
+          <MiniBars values={summary.by_hour} labelFor={hourLabel} ariaLabel="Views by hour (UTC)" />
+        </>
+      )}
+
+      <label className="admin-checkbox" style={{ marginTop: '1.5rem' }}>
+        <input type="checkbox" checked={excludeMe} onChange={toggleExclude} />
+        <span>Exclude this device from analytics</span>
+      </label>
+
+      <div className="admin-data-actions" style={{ marginTop: '0.85rem' }}>
         <button className="admin-btn admin-btn--danger" onClick={resetAnalytics}>
           Reset analytics
         </button>
@@ -1241,8 +1312,8 @@ const AdminPanel = ({ open, onClose }) => {
   };
 
   return (
-    <div className="admin-overlay" onClick={onClose}>
-      <div className="admin-panel" onClick={(e) => e.stopPropagation()}>
+    <div className="admin-overlay">
+      <div className="admin-panel">
         <header className="admin-header">
           <h2 className="admin-title">
             Portfolio Editor

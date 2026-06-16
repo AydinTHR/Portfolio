@@ -61,11 +61,15 @@ export const api = {
   deleteMessage: (id) => request(`/api/messages/${id}`, { method: 'DELETE' }),
 
   // Analytics
-  trackEvent: (event) =>
-    request('/api/analytics/event', {
+  trackEvent: (event) => {
+    // The owner's own browsing is never counted: once they sign in on a device
+    // it's flagged and excluded for good (independent of the login cookie).
+    if (isOwnerDevice()) return Promise.resolve();
+    return request('/api/analytics/event', {
       method: 'POST',
       body: { visitor: getVisitorId(), ...event },
-    }).catch(() => {}),
+    }).catch(() => {});
+  },
   getAnalyticsSummary: () => request('/api/analytics/summary'),
   resetAnalytics: () => request('/api/analytics/reset', { method: 'POST' }),
 
@@ -90,6 +94,25 @@ const getVisitorId = () => {
     return id;
   } catch {
     return null;
+  }
+};
+
+// Owner-device flag: set when the admin signs in so their own visits stop
+// being tracked permanently on that browser, regardless of the login cookie.
+const OWNER_KEY = 'pf-owner';
+export const isOwnerDevice = () => {
+  try {
+    return localStorage.getItem(OWNER_KEY) === '1';
+  } catch {
+    return false;
+  }
+};
+export const setOwnerDevice = (on) => {
+  try {
+    if (on) localStorage.setItem(OWNER_KEY, '1');
+    else localStorage.removeItem(OWNER_KEY);
+  } catch {
+    /* storage unavailable */
   }
 };
 

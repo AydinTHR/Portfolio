@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Portfolio.css';
 import { api } from './lib/api';
 import { useContent } from './hooks/useContent';
@@ -19,8 +20,9 @@ import GrainOverlay from './components/polish/GrainOverlay';
 import Toast from './components/polish/Toast';
 import useScrollSpy from './hooks/useScrollSpy';
 
-const Portfolio = () => {
+const Portfolio = ({ openAdmin = false }) => {
   const { content, loading } = useContent();
+  const navigate = useNavigate();
 
   // Sections with no items don't render, so keep nav, dots, and scroll-spy
   // in sync with what's actually on the page.
@@ -32,8 +34,8 @@ const Portfolio = () => {
       'home',
       'about',
       ...(hasSkills ? ['skills'] : []),
-      ...(hasExperience ? ['experience'] : []),
       ...(hasProjects ? ['projects'] : []),
+      ...(hasExperience ? ['experience'] : []),
       'contact',
     ],
     [hasSkills, hasExperience, hasProjects]
@@ -41,10 +43,16 @@ const Portfolio = () => {
 
   const activeSection = useScrollSpy(sections, 200);
   const [scrollProgress, setScrollProgress] = useState(0);
-  const [adminOpen, setAdminOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
+  // Opened via the secret /admin URL or the keyboard shortcut (no visible button).
+  const [adminOpen, setAdminOpen] = useState(openAdmin);
   const [slowHint, setSlowHint] = useState(false);
   const trackedSections = useRef(new Set());
+
+  const closeAdmin = () => {
+    setAdminOpen(false);
+    // If we arrived via /admin, drop back to the homepage URL.
+    if (window.location.pathname === '/admin') navigate('/', { replace: true });
+  };
 
   // On a cold server start the first load can take a while; after a few seconds
   // of waiting, reassure the visitor that it's loading, not broken.
@@ -57,37 +65,23 @@ const Portfolio = () => {
     return () => clearTimeout(t);
   }, [loading]);
 
-  // Unread-message badge on the editor button — only meaningful for the admin,
-  // so check the session first and stay silent for regular visitors.
-  useEffect(() => {
-    if (adminOpen) return;
-    let cancelled = false;
-    api
-      .me()
-      .then((s) => (s.authenticated ? api.getUnreadCount() : { count: 0 }))
-      .then(({ count }) => {
-        if (!cancelled) setUnreadCount(count);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [adminOpen]);
-
   // Visitor analytics: one pageview per load, one event per section per visit.
+  // The secret /admin entrance is never tracked.
   useEffect(() => {
+    if (openAdmin) return;
     api.trackEvent({
       type: 'pageview',
       path: window.location.pathname,
       referrer: document.referrer || null,
     });
-  }, []);
+  }, [openAdmin]);
 
   useEffect(() => {
+    if (openAdmin) return;
     if (!activeSection || trackedSections.current.has(activeSection)) return;
     trackedSections.current.add(activeSection);
     api.trackEvent({ type: 'section', section: activeSection });
-  }, [activeSection]);
+  }, [activeSection, openAdmin]);
 
   const scrollToSection = (id) => {
     const element = document.getElementById(id);
@@ -183,28 +177,14 @@ const Portfolio = () => {
           <Hero onNavigate={scrollToSection} />
           <About />
           <Skills />
-          <Experience />
           <Projects />
+          <Experience />
           <Contact />
           <Footer />
           <ScrollToTop />
           <ThemeToggle />
 
-          <button
-            className="admin-fab"
-            onClick={() => setAdminOpen(true)}
-            aria-label="Open editor (Ctrl+Shift+E)"
-            title="Edit portfolio (Ctrl/Cmd+Shift+E)"
-          >
-            ✎
-            {unreadCount > 0 && (
-              <span className="admin-fab-badge" aria-label={`${unreadCount} unread messages`}>
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </span>
-            )}
-          </button>
-
-          <AdminPanel open={adminOpen} onClose={() => setAdminOpen(false)} />
+          <AdminPanel open={adminOpen} onClose={closeAdmin} />
         </>
       )}
     </div>
