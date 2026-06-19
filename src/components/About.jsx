@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import profileImage from '../assets/profile.jpg';
+import profilePlaceholder from '../assets/avatar-placeholder.svg';
 import { useContent } from '../hooks/useContent';
 import { resolveAssetUrl } from '../lib/api';
 import { stagger, fadeUpChild } from '../motion/variants';
@@ -8,7 +8,7 @@ import CountUp from './polish/CountUp';
 
 const About = () => {
   const { content } = useContent();
-  const src = resolveAssetUrl(content.about.profileImage) || profileImage;
+  const src = resolveAssetUrl(content.about.profileImage) || profilePlaceholder;
   const stats = content.about.stats || [];
 
   return (
