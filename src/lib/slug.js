@@ -1,4 +1,4 @@
-// URL slug for a project title: "Dog Wash Booking System" -> "dog-wash-booking-system".
+// URL slug for a project title: "My Project Name" -> "my-project-name".
 export const slugify = (title) =>
   (title || '')
     .toLowerCase()
