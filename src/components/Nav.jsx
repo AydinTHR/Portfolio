@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Monogram from './Monogram';
 
 const Nav = ({ sections, activeSection, onNavigate }) => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -10,6 +11,9 @@ const Nav = ({ sections, activeSection, onNavigate }) => {
 
   return (
     <nav className="nav">
+      <button className="nav__brand" onClick={() => handleClick('home')} aria-label="Back to top">
+        <Monogram size={38} />
+      </button>
       <button
         className={`nav__hamburger ${menuOpen ? 'open' : ''}`}
         onClick={() => setMenuOpen(!menuOpen)}

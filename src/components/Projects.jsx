@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useContent } from '../hooks/useContent';
@@ -6,9 +6,53 @@ import { resolveAssetUrl } from '../lib/api';
 import { projectSlugs } from '../lib/slug';
 import useReducedMotionSafe from '../hooks/useReducedMotionSafe';
 import CountUp from './polish/CountUp';
+import ExpeditionMap from './ExpeditionMap';
 
 const TILT_AMOUNT = 6;
 const SPRING = { stiffness: 160, damping: 18, mass: 0.6 };
+
+// The map needs room to spread its basecamps out; below this the card layout is
+// the better experience, not a legacy fallback.
+const MAP_QUERY = '(min-width: 900px)';
+
+const useMapViewport = () => {
+  const [wide, setWide] = useState(() => window.matchMedia(MAP_QUERY).matches);
+
+  useEffect(() => {
+    const mq = window.matchMedia(MAP_QUERY);
+    const handler = (e) => setWide(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  return wide;
+};
+
+// Portfolio's page-wide reveal observer snapshots the DOM once per load, so
+// cards that mount later (swapping down from the map when the window narrows
+// past 900px) would otherwise stay stuck at the .stagger-card opacity of 0.
+const useCardReveal = (active) => {
+  const listRef = useRef(null);
+
+  useEffect(() => {
+    const list = listRef.current;
+    if (!active || !list) return undefined;
+    const hidden = list.querySelectorAll('.stagger-card:not(.visible)');
+    if (!hidden.length) return undefined;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) entry.target.classList.add('visible');
+        });
+      },
+      { threshold: 0.15 }
+    );
+    hidden.forEach((card) => observer.observe(card));
+    return () => observer.disconnect();
+  }, [active]);
+
+  return listRef;
+};
 
 const ProjectCard = ({ project, index, slug }) => {
   const reduced = useReducedMotionSafe();
@@ -113,6 +157,8 @@ const ProjectCard = ({ project, index, slug }) => {
 
 const Projects = () => {
   const { content } = useContent();
+  const showMap = useMapViewport();
+  const listRef = useCardReveal(!showMap);
 
   // Hide the section entirely until it has content to show.
   if (!content.projects?.length) return null;
@@ -124,11 +170,15 @@ const Projects = () => {
       <div className="projects__inner">
         <h2 className="section__title animate-on-scroll">My Projects</h2>
 
-        <div className="projects__list">
-          {content.projects.map((project, index) => (
-            <ProjectCard key={index} project={project} index={index} slug={slugs[index]} />
-          ))}
-        </div>
+        {showMap ? (
+          <ExpeditionMap projects={content.projects} slugs={slugs} />
+        ) : (
+          <div className="projects__list" ref={listRef}>
+            {content.projects.map((project, index) => (
+              <ProjectCard key={index} project={project} index={index} slug={slugs[index]} />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

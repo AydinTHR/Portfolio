@@ -6,10 +6,18 @@
   /* Glass */
   --glass-bg: rgba(255, 255, 255, 0.08);
   --glass-bg-hover: rgba(255, 255, 255, 0.12);
+  --glass-bg-faint: rgba(255, 255, 255, 0.08);
   --glass-blur: blur(8px);
   --glass-border: 1px solid rgba(255, 255, 255, 0.1);
   --glass-border-hover: 1px solid rgba(255, 255, 255, 0.2);
-  --glass-radius: 12px;
+  --hairline: rgba(255, 255, 255, 0.1);
+
+  /* Radii, two tiers: chrome (buttons, badges, tags, inputs) reads tighter than
+     glass surfaces (cards, panels, media frames). Pills and circles keep their
+     own shapes. --glass-radius stays as the surface alias. */
+  --radius-chrome: 10px;
+  --radius-surface: 20px;
+  --glass-radius: var(--radius-surface);
   --glass-radius-pill: 50px;
 
   /* Text */
@@ -20,16 +28,23 @@
   /* Accent */
   --accent: #F5A623;
   --accent-glow: rgba(245, 166, 35, 0.25);
+  --accent-border: rgba(245, 166, 35, 0.25);
+  --accent-border-strong: rgba(245, 166, 35, 0.45);
+  /* The amber the contour lines read as. Matches what the map canvas strokes in
+     each theme, so map labels never drift off the terrain's own palette. */
+  --accent-terrain: var(--accent);
 
   /* Typography */
   --font-heading: 'Space Grotesk', 'Inter', sans-serif;
   --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'SF Mono', 'Fira Code', 'Courier New', monospace;
 
   /* Effects */
   --shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   --shadow-subtle: 0 4px 20px rgba(0, 0, 0, 0.2);
   --hover-lift: translateY(-4px);
   --transition: 0.3s ease;
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* --- Animations --- */
@@ -193,6 +208,31 @@ html {
   border-bottom: var(--glass-border);
   z-index: 1000;
   pointer-events: none;
+}
+
+/* Absolute rather than in flow, so the link list stays optically centred in the
+   bar instead of being pushed off-centre by the mark. */
+.nav__brand {
+  position: absolute;
+  left: 1.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  pointer-events: auto;
+  color: var(--text-primary);
+  opacity: 0.85;
+  transition: opacity var(--transition), transform var(--transition);
+  z-index: 1002;
+}
+
+.nav__brand:hover {
+  opacity: 1;
+  transform: translateY(-50%) scale(1.06);
 }
 
 .nav__list {
@@ -571,6 +611,264 @@ html {
   gap: 2.5rem;
 }
 
+/* --- Expedition Map (projects as basecamps on one terrain, >=900px) --- */
+/* Breaks out of the 1100px column to full width. .portfolio already clips
+   overflow-x, so this cannot create sideways scroll. */
+.pk-map-wrap {
+  position: relative;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  height: min(680px, 82vh);
+  margin-top: 0.5rem;
+}
+
+.pk-map-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+.pk-map-wrap::before,
+.pk-map-wrap::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--hairline);
+}
+
+.pk-map-wrap::before { top: 0; }
+.pk-map-wrap::after { bottom: 0; }
+
+/* Survey chrome: decorative overlays, drawn in HTML rather than canvas so the
+   labels stay selectable text. */
+.pk-map-legend {
+  position: absolute;
+  top: 18px;
+  left: 26px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.pk-map-legend b {
+  color: var(--accent-terrain);
+  font-weight: 400;
+}
+
+.pk-map-north {
+  position: absolute;
+  top: 16px;
+  right: 26px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.2;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.pk-map-scale {
+  position: absolute;
+  bottom: 16px;
+  left: 26px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.pk-map-scale i {
+  display: block;
+  width: 120px;
+  height: 5px;
+  border: 1px solid currentColor;
+  border-top: none;
+  margin-top: 4px;
+  opacity: 0.55;
+}
+
+/* Padding brings the hit target past the 44px tap-target minimum. */
+.pk-marker {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  z-index: 3;
+  min-width: 44px;
+  padding: 10px;
+}
+
+.pk-marker__dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent-terrain);
+  box-shadow: 0 0 14px var(--accent-glow);
+  position: relative;
+  transition: transform var(--transition);
+}
+
+.pk-marker__dot::before {
+  content: '';
+  position: absolute;
+  inset: -9px;
+  border-radius: 50%;
+  border: 1px solid var(--accent-border-strong);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pk-marker__dot::before {
+    animation: pk-waypoint-ring 2.8s ease-out infinite;
+  }
+}
+
+@keyframes pk-waypoint-ring {
+  0% { transform: scale(0.55); opacity: 1; }
+  100% { transform: scale(2.1); opacity: 0; }
+}
+
+.pk-marker--on .pk-marker__dot {
+  transform: scale(1.35);
+}
+
+/* The active basecamp stays above its own brief panel. */
+.pk-marker--on {
+  z-index: 5;
+}
+
+.pk-marker__tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  border: 1px solid var(--hairline);
+  padding: 4px 9px;
+  border-radius: var(--radius-chrome);
+  white-space: nowrap;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+[data-theme="light"] .pk-marker__tag {
+  background: rgba(246, 244, 238, 0.75);
+}
+
+.pk-marker__coords {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  color: var(--text-muted);
+}
+
+.pk-marker--on .pk-marker__tag {
+  border-color: var(--accent-border-strong);
+  color: var(--accent-terrain);
+}
+
+/* Dense mode (5+ basecamps): compact the idle tags so labels stop colliding.
+   The full label comes back on hover or focus. */
+.pk-map-wrap--dense .pk-marker:not(.pk-marker--on) .pk-marker__tag {
+  max-width: 76px;
+}
+
+.pk-map-wrap--dense .pk-marker:not(.pk-marker--on) .pk-marker__coords {
+  display: none;
+}
+
+.pk-map-panel {
+  position: absolute;
+  width: 340px;
+  z-index: 4;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-surface);
+  padding: 1.4rem 1.5rem;
+  box-shadow: var(--shadow);
+}
+
+[data-theme="light"] .pk-map-panel {
+  background: var(--glass-bg-faint);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pk-map-panel {
+    animation: pk-panel-in 0.3s var(--ease-out-soft);
+  }
+}
+
+@keyframes pk-panel-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+.pk-map-panel__eyebrow {
+  margin: 0 0 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent-terrain);
+}
+
+.pk-map-panel__title {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.pk-map-panel__desc {
+  margin: 0 0 0.85rem;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.pk-map-panel__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.pk-map-panel__chip {
+  font-size: 0.68rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--glass-radius-pill);
+  border: var(--glass-border-hover);
+  color: var(--text-secondary);
+}
+
+.pk-map-panel__link {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  color: var(--accent-terrain);
+  text-decoration: none;
+}
+
+.pk-map-panel__link:hover {
+  text-shadow: 0 0 12px var(--accent-glow);
+}
+
 .project-block {
   position: relative;
   padding: 3rem;
@@ -625,7 +923,7 @@ html {
   align-items: center;
   justify-content: center;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
+  border-radius: var(--radius-chrome);
   font-size: 1.25rem;
   color: var(--text-muted);
   transition: all 0.4s ease;
@@ -643,7 +941,7 @@ html {
   color: var(--text-muted);
   padding: 0.5rem 1rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
+  border-radius: var(--radius-chrome);
 }
 
 .project-block__title {
@@ -688,7 +986,7 @@ html {
   gap: 0.5rem;
   padding: 0.45rem 0.9rem;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 6px;
+  border-radius: var(--radius-chrome);
   font-size: 0.75rem;
   font-weight: 500;
   color: var(--text-secondary);
@@ -729,7 +1027,7 @@ html {
   gap: 0.6rem;
   padding: 0.85rem 1.5rem;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
+  border-radius: var(--radius-chrome);
   color: var(--text-primary);
   font-size: 0.8rem;
   font-weight: 600;
@@ -794,7 +1092,7 @@ html {
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   border: var(--glass-border);
-  border-radius: var(--glass-radius);
+  border-radius: var(--radius-chrome);
   color: var(--text-primary);
   font-size: 1rem;
   font-family: inherit;
@@ -859,7 +1157,7 @@ html {
   gap: 1rem;
   padding: 1rem 1.25rem;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 10px;
+  border-radius: var(--radius-surface);
   color: var(--text-primary);
   text-decoration: none;
   transition: all var(--transition);
@@ -878,7 +1176,7 @@ html {
   align-items: center;
   justify-content: center;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
+  border-radius: var(--radius-chrome);
   color: var(--text-secondary);
   transition: all var(--transition);
   flex-shrink: 0;
@@ -938,6 +1236,13 @@ html {
   position: relative;
   z-index: 1;
   pointer-events: none;
+}
+
+.footer__mark {
+  display: block;
+  margin: 0 auto 0.85rem;
+  color: var(--text-primary);
+  opacity: 0.7;
 }
 
 .footer p {
@@ -1056,7 +1361,7 @@ html {
   height: 85vh;
   background: #0b0b0b;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 14px;
+  border-radius: var(--radius-surface);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1089,7 +1394,7 @@ html {
   color: var(--text-secondary);
   width: 32px;
   height: 32px;
-  border-radius: 6px;
+  border-radius: var(--radius-chrome);
   font-size: 1.25rem;
   cursor: pointer;
   display: flex;
@@ -1165,7 +1470,7 @@ html {
   padding: 0.7rem 0.9rem;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
+  border-radius: var(--radius-chrome);
   color: var(--text-primary);
   font-size: 0.9rem;
   font-family: inherit;
@@ -1193,7 +1498,7 @@ html {
   padding: 1rem;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
+  border-radius: var(--radius-surface);
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -1218,7 +1523,7 @@ html {
   padding: 0.55rem 1rem;
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
+  border-radius: var(--radius-chrome);
   color: var(--text-primary);
   font-size: 0.78rem;
   font-weight: 600;
@@ -1429,7 +1734,7 @@ html {
   padding: 1rem;
   background: rgba(255, 255, 255, 0.04);
   border: var(--glass-border);
-  border-radius: 10px;
+  border-radius: var(--radius-surface);
 }
 
 .admin-stat-value {
@@ -1459,7 +1764,7 @@ html {
   max-height: 220px;
   overflow-y: auto;
   border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 6px;
+  border-radius: var(--radius-chrome);
   padding: 0 0.5rem;
 }
 
@@ -1827,7 +2132,7 @@ html {
   padding: 1rem 1.25rem;
   background: rgba(245, 166, 35, 0.04);
   border-left: 2px solid var(--accent);
-  border-radius: 8px;
+  border-radius: var(--radius-chrome);
   font-size: 0.88rem;
   color: var(--text-secondary);
 }
@@ -1865,7 +2170,7 @@ html {
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   border: var(--glass-border);
-  border-radius: var(--glass-radius);
+  border-radius: var(--radius-chrome);
   color: var(--text-primary);
   font-family: var(--font-body);
   font-size: 1rem;
@@ -2287,7 +2592,7 @@ html {
   align-items: center;
   justify-content: center;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
+  border-radius: var(--radius-chrome);
   font-size: 0.95rem;
   color: var(--text-muted);
   flex-shrink: 0;
@@ -2342,7 +2647,7 @@ html {
   color: var(--text-muted);
   padding: 0.4rem 0.85rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
+  border-radius: var(--radius-chrome);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -2457,8 +2762,15 @@ html {
 [data-theme="light"] {
   --glass-bg: rgba(0, 0, 0, 0.04);
   --glass-bg-hover: rgba(0, 0, 0, 0.07);
+  /* Light glass is nearly transparent, so surfaces that need readable text on
+     top of the terrain get a near-opaque paper fill instead. */
+  --glass-bg-faint: rgba(246, 244, 238, 0.8);
   --glass-border: 1px solid rgba(0, 0, 0, 0.08);
   --glass-border-hover: 1px solid rgba(0, 0, 0, 0.15);
+  --hairline: rgba(0, 0, 0, 0.08);
+  /* The bright accent washes out on paper, so light mode drops to the deeper
+     amber the canvas already uses for its accent contour. */
+  --accent-terrain: #DF920F;
 
   --text-primary: #111111;
   --text-secondary: rgba(0, 0, 0, 0.7);
@@ -2612,7 +2924,7 @@ html {
   letter-spacing: 0.05em;
   padding: 0.2rem 0.6rem;
   border: 1px solid rgba(128, 128, 128, 0.25);
-  border-radius: 5px;
+  border-radius: var(--radius-chrome);
 }
 
 .project-detail__title {
@@ -2650,7 +2962,7 @@ html {
 }
 
 .project-detail__media {
-  border-radius: 14px;
+  border-radius: var(--radius-surface);
   overflow: hidden;
   margin-bottom: 2.25rem;
   border: var(--glass-border);

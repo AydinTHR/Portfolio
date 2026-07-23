@@ -11,11 +11,13 @@ test.describe('portfolio', () => {
     await expect(page.locator('#contact .section__title')).toHaveText('Get In Touch');
   });
 
-  test('project detail page opens from a card and returns home', async ({ page }) => {
+  test('project detail page opens from a basecamp and returns home', async ({ page }) => {
     await page.goto('/');
     await page.locator('#projects').scrollIntoViewIfNeeded();
-    // First seeded placeholder project: "Project one"
-    await page.locator('.project-block__btn', { hasText: 'View Details' }).first().click();
+    // At desktop widths the projects section is the expedition map, so the way
+    // in is a basecamp marker rather than a card button. First seeded
+    // placeholder project: "Project one".
+    await page.locator('.pk-marker').first().click();
     await expect(page).toHaveURL(/\/projects\/project-one/);
     await expect(page.locator('.project-detail__title')).toHaveText('Project one');
     await expect(page.locator('.project-detail__chip').first()).toBeVisible();
