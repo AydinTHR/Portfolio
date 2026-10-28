@@ -14,6 +14,7 @@ from ..models.analytics import (
     SectionCount,
     VisitorRow,
 )
+from ..rate_limit import client_ip, limiter
 from ..security import COOKIE_NAME, decode_token, get_current_admin
 
 router = APIRouter(prefix="/api/analytics", tags=["analytics"])
@@ -26,7 +27,7 @@ def _visitor_hash(request: Request, period: str) -> str:
     storage isn't counted as a brand-new person every day, while still storing
     no raw PII. Used as the fallback grouping key when there's no client id.
     """
-    ip = request.client.host if request.client else ""
+    ip = client_ip(request)
     ua = request.headers.get("user-agent", "")
     raw = f"{settings.analytics_salt}:{period}:{ip}:{ua}"
     return hashlib.sha256(raw.encode()).hexdigest()[:32]
@@ -116,6 +117,7 @@ def _parse_device(ua: str) -> str:
 
 
 @router.post("/event")
+@limiter.limit("60/minute")
 async def record_event(
     request: Request,
     payload: EventIn,

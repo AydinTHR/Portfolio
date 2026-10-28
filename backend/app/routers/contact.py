@@ -5,7 +5,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from ..db import get_db
 from ..models.message import ContactIn
-from ..rate_limit import limiter
+from ..rate_limit import client_ip, limiter
 from ..services.email import send_contact_notification
 
 router = APIRouter(prefix="/api/contact", tags=["contact"])
@@ -28,7 +28,7 @@ async def submit_contact(
         "message": payload.message,
         "created_at": dt.datetime.now(dt.UTC),
         "read": False,
-        "ip": request.client.host if request.client else None,
+        "ip": client_ip(request),
         "user_agent": request.headers.get("user-agent"),
     }
     await db.messages.insert_one(doc)

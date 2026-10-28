@@ -118,7 +118,7 @@ Continuous integration runs all suites on every push (see `.github/workflows/ci.
 ## Deploying
 
 1. **Database**: create a free MongoDB Atlas cluster and note the connection string.
-2. **API**: deploy `backend/` (Dockerfile included) to Render, Railway, or Fly. Set the `.env` values, `ENVIRONMENT=production`, and `FRONTEND_ORIGIN=https://your-domain`.
+2. **API**: deploy `backend/` (Dockerfile included) to Render, Railway, or Fly. Set the `.env` values, `ENVIRONMENT=production`, a random `JWT_SECRET` of at least 32 characters, and `FRONTEND_ORIGIN=https://your-domain`. On Render, also set `CLIENT_IP_HEADER=CF-Connecting-IP` so rate limits apply per visitor.
 3. **Frontend**: deploy to Vercel or Netlify with `VITE_API_URL` pointing at the API. The included `vercel.json` rewrites all routes to the SPA so `/admin` and `/projects/...` resolve.
 4. If the frontend and API live on different domains, set `COOKIE_SAMESITE=none` so the admin session cookie works cross-site (a same-site API subdomain like `api.your-domain` can keep `lax`).
 

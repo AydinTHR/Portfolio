@@ -42,12 +42,13 @@ The `content` collection is **auto-seeded** with default portfolio content on fi
 | `MONGODB_URI` / `DB_NAME` | MongoDB connection (local Docker or Atlas) |
 | `ADMIN_EMAIL` | The single admin's login email |
 | `ADMIN_PASSWORD_HASH` | Argon2 hash — generate with `scripts/hash_password.py` |
-| `JWT_SECRET` | Secret for signing session tokens (use a long random string) |
+| `JWT_SECRET` | Secret for signing session tokens. In production it must be at least 32 characters and not a placeholder, or the server refuses to start |
 | `JWT_EXPIRE_HOURS` | Session lifetime (default 12) |
 | `ENVIRONMENT` | `production` marks the auth cookie `Secure` |
 | `COOKIE_SAMESITE` | `lax` (default) / `strict` / `none` (cross-site prod needs `none` + HTTPS) |
 | `COOKIE_DOMAIN` | Optional cookie domain scope |
 | `FRONTEND_ORIGIN` | Allowed CORS origin(s), comma-separated |
+| `CLIENT_IP_HEADER` | Header the proxy sets to the visitor's IP (`CF-Connecting-IP` on Render). Blank uses the connecting address |
 | `RESEND_API_KEY` | Resend key; if blank, contact emails are skipped (messages still stored) |
 | `CONTACT_FROM_EMAIL` / `CONTACT_TO_EMAIL` | Sender / recipient for contact emails |
 | `ANALYTICS_SALT` | Salt for the daily visitor hash |
@@ -75,7 +76,7 @@ Interactive docs: `GET /docs`.
 | POST | `/api/images` | admin | Upload an image (≤ 5 MB; JPEG/PNG/WebP/GIF) |
 | GET | `/api/images/{id}` | – | Serve an uploaded image (immutable cache) |
 | DELETE | `/api/images/{id}` | admin | Delete an uploaded image |
-| POST | `/api/analytics/event` | – | Record pageview/section event |
+| POST | `/api/analytics/event` | rate-limited | Record pageview/section event |
 | GET | `/api/analytics/summary` | admin | Aggregated stats |
 
 ## Tests & lint
@@ -88,6 +89,6 @@ ruff check .
 ## Deploy
 
 1. **Database:** MongoDB Atlas — set `MONGODB_URI`.
-2. **API:** build the included `Dockerfile` and deploy to Render / Railway / Fly / any container host. Set all `.env` variables, `ENVIRONMENT=production`, and `FRONTEND_ORIGIN` to your site's URL. The container honours `$PORT`.
+2. **API:** build the included `Dockerfile` and deploy to Render / Railway / Fly / any container host. Set all `.env` variables, `ENVIRONMENT=production`, a random `JWT_SECRET` of at least 32 characters, and `FRONTEND_ORIGIN` to your site's URL. On Render, also set `CLIENT_IP_HEADER=CF-Connecting-IP` so rate limits apply per visitor. The container honours `$PORT`.
 3. **Frontend:** point the frontend's `VITE_API_URL` at the deployed API base URL.
 4. If the frontend and API are on **different sites**, set `COOKIE_SAMESITE=none` (requires HTTPS) so the auth cookie is sent cross-site.
