@@ -6,9 +6,10 @@ from pydantic import BaseModel, Field
 
 class EventIn(BaseModel):
     type: Literal["pageview", "section"] = "pageview"
-    path: str = "/"
-    section: str | None = None
-    referrer: str | None = None
+    # Bounded so an anonymous caller cannot store arbitrarily large documents.
+    path: str = Field(default="/", max_length=512)
+    section: str | None = Field(default=None, max_length=100)
+    referrer: str | None = Field(default=None, max_length=2048)
     # Anonymous first-party device id generated client-side (localStorage),
     # used to count repeat visits per device. Optional: blocked storage sends null.
     visitor: str | None = Field(
